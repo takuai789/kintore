@@ -156,6 +156,13 @@
   .medit-top .nm { font-size: 15px; font-weight: 700; color: var(--navy); }
   .medit-top .rm { margin-left: auto; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
   .medit-goals { display: flex; gap: 10px; margin-top: 10px; }
+  .medit-weight { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 7px 10px; margin-top: 10px; }
+  .medit-weight .gl { font-size: 12px; color: var(--secondary); font-weight: 600; }
+  .medit-weight .gpm { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: var(--navy); font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .medit-weight .mw-input { flex: 1; min-width: 0; text-align: center; font-size: 16px; font-weight: 700; color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
+  .medit-weight .mw-input:focus { outline: none; }
+  .medit-weight .mw-input::placeholder { color: var(--tertiary); font-weight: 500; }
+  .medit-weight .wu { font-size: 12px; color: var(--secondary); font-weight: 500; }
   .medit-goals .goal { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 7px 10px; }
   .medit-goals .gl { font-size: 12px; color: var(--secondary); font-weight: 600; }
   .medit-goals .gpm { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: var(--navy); font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
@@ -425,7 +432,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '1.8.2';
+  const APP_VERSION = '1.9.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -440,6 +447,7 @@
 
   // ---------- state ----------
   const WEIGHT_STEPS = [1, 2.5, 5];
+  const REP_CHOICES = [1, 2, 3, 4, 5, 10, 20];
   const state = {
     exercises: [],   // {id,name,category,isPreset,hidden,fav,order,createdAt,updatedAt}
     workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,rpe}]}],updatedAt}
@@ -570,7 +578,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
             </button>
           </div>
-          ${tgt ? `<div class="ex-target">🎯 目標 ${tgt.sets}セット × ${tgt.reps}回　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>` : ''}`;
+          ${tgt ? `<div class="ex-target">🎯 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>` : ''}`;
         en.sets.forEach((s, si) => {
           html += `<div class="set-row" data-editset="${ei}:${si}">
             <span class="set-no">${si+1}</span>
@@ -847,8 +855,8 @@
     for (const it of (m.items||[])) {
       if (!exById(it.exerciseId)) continue;
       const existing = wk.entries.find(en => en.exerciseId === it.exerciseId);
-      if (existing) { existing.target = { sets: it.sets, reps: it.reps }; }
-      else { wk.entries.push({ exerciseId: it.exerciseId, sets: [], target: { sets: it.sets, reps: it.reps } }); added++; }
+      if (existing) { existing.target = { sets: it.sets, reps: it.reps, weight: it.weight || 0 }; }
+      else { wk.entries.push({ exerciseId: it.exerciseId, sets: [], target: { sets: it.sets, reps: it.reps, weight: it.weight || 0 } }); added++; }
     }
     await saveWorkout(wk);
     state.recDate = todayStr();
@@ -895,6 +903,13 @@
             <span class="nm">${ex ? esc(ex.name) : '（削除された種目）'}</span>
             <button class="rm" data-mremove="${i}" aria-label="外す"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>
+          <div class="medit-weight">
+            <span class="gl">重量</span>
+            <button class="gpm" data-mwt="${i}:-1">−</button>
+            <input class="mw-input" id="mwv${i}" inputmode="decimal" value="${it.weight ? fmtNum(it.weight) : ''}" placeholder="任意">
+            <span class="wu">kg</span>
+            <button class="gpm" data-mwt="${i}:1">＋</button>
+          </div>
           <div class="medit-goals">
             <div class="goal"><span class="gl">セット</span>
               <button class="gpm" data-mset="${i}:-1">−</button><span class="gv" id="msetv${i}">${it.sets}</span><button class="gpm" data-mset="${i}:1">＋</button>
@@ -918,6 +933,15 @@
     if (setB) { const [i,d] = setB.dataset.mset.split(':').map(Number); m.items[i].sets = Math.max(1, Math.min(20, m.items[i].sets + d)); $('#msetv'+i).textContent = m.items[i].sets; return; }
     const repB = e.target.closest('[data-mreps]');
     if (repB) { const [i,d] = repB.dataset.mreps.split(':').map(Number); m.items[i].reps = Math.max(1, Math.min(50, m.items[i].reps + d)); $('#mrepsv'+i).textContent = m.items[i].reps; return; }
+    const wtB = e.target.closest('[data-mwt]');
+    if (wtB) {
+      const [i,d] = wtB.dataset.mwt.split(':').map(Number);
+      const cur = m.items[i].weight || 0;
+      const v = Math.max(0, Math.round((cur + d*state.weightStep)*100)/100);
+      m.items[i].weight = v;
+      $('#mwv'+i).value = v ? fmtNum(v) : '';
+      return;
+    }
     const rm = e.target.closest('[data-mremove]');
     if (rm) { m.items.splice(parseInt(rm.dataset.mremove,10),1); renderMenuEdit(); return; }
     const addEx = e.target.closest('#menuAddEx');
@@ -930,6 +954,11 @@
     const m = state.editingMenu; if (!m) return;
     if (e.target.id === 'menuName') m.name = e.target.value;
     if (e.target.id === 'menuNote') m.note = e.target.value;
+    if (e.target.id && e.target.id.startsWith('mwv')) {
+      const i = parseInt(e.target.id.slice(3), 10);
+      const v = parseFloat(e.target.value);
+      if (m.items[i]) m.items[i].weight = (v > 0) ? Math.round(v*100)/100 : 0;
+    }
   });
 
   $('#menuEditBack').addEventListener('click', closeMenuEdit);
@@ -937,7 +966,7 @@
     const m = state.editingMenu; if (!m) return;
     const name = (m.name||'').trim();
     if (!name) { toast('メニュー名を入力してください'); return; }
-    const obj = { id: m.id, name, note: (m.note||'').trim(), items: m.items.map(it => ({ exerciseId: it.exerciseId, sets: it.sets, reps: it.reps })), order: m.order, createdAt: m.createdAt, updatedAt: now() };
+    const obj = { id: m.id, name, note: (m.note||'').trim(), items: m.items.map(it => ({ exerciseId: it.exerciseId, sets: it.sets, reps: it.reps, weight: it.weight || 0 })), order: m.order, createdAt: m.createdAt, updatedAt: now() };
     await put('menus', obj);
     const idx = state.menus.findIndex(x => x.id === obj.id);
     if (idx >= 0) state.menus[idx] = obj; else state.menus.push(obj);
@@ -1042,7 +1071,7 @@
       const last = entry.sets[entry.sets.length-1];
       init = pv ? { w: pv.w, r: pv.r, rpe: null } : (last ? { w: last.w, r: last.r, rpe: null } : { w: 20, r: 3, rpe: null });
     }
-    let cur = { w: init.w, r: Math.min(5, Math.max(1, init.r || 3)), rpe: init.rpe || null };
+    let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
 
     const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
     const subText = pv ? `前回 ${fmtNum(pv.w)}kg × ${pv.r}${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
@@ -1069,7 +1098,7 @@
       <div class="rpe-box">
         <div class="lbl">回数</div>
         <div class="rpe-scale" id="repScale">
-          ${[1,2,3,4,5].map(n=>`<button data-rep="${n}" class="${cur.r===n?'on':''}">${n}</button>`).join('')}
+          ${REP_CHOICES.map(n=>`<button data-rep="${n}" class="${cur.r===n?'on':''}">${n}</button>`).join('')}
         </div>
       </div>
       <div class="rpe-box">
@@ -1183,7 +1212,7 @@
         usedIds.add(exId); buildList(); renderPlan();
       } else if (mode==='menu') {
         if (usedIds.has(exId)) return;
-        if (state.editingMenu) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10 });
+        if (state.editingMenu) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
         usedIds.add(exId); buildList(); renderMenuEdit();
       } else {
         state.progExId = exId;
