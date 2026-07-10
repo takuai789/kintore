@@ -86,8 +86,8 @@
   .ex-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .ex-name { font-size: 16px; font-weight: 700; color: var(--navy); }
   .ex-cat { font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 6px; }
-  .ex-del { margin-left: auto; color: var(--tertiary); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
-  .set-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--sep); }
+  .ex-del { margin-left: auto; color: var(--tertiary); width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; }
+  .set-row { display: flex; align-items: center; gap: 10px; padding: 13px 2px; min-height: 48px; border-top: 1px solid var(--sep); }
   .set-no { width: 26px; height: 26px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
   .set-val .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
@@ -128,7 +128,7 @@
   .plan-li .num { width: 24px; height: 24px; border-radius: 7px; background: var(--navy-soft); color: var(--navy); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .plan-li .nm { font-size: 15px; font-weight: 600; }
   .plan-li .cat { font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 6px; margin-left: auto; }
-  .plan-li .rm { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
+  .plan-li .rm { width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
   .plan-start { width: 100%; padding: 15px; background: var(--amber); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin: 14px 0 10px; }
   .plan-actions { display: flex; flex-direction: column; gap: 2px; }
   .plan-actions button { padding: 12px; border-radius: 12px; background: #fff; color: var(--navy); font-size: 14px; font-weight: 600; }
@@ -151,23 +151,24 @@
   .menu-go:disabled { background: var(--tertiary); }
 
   /* ---- menu edit ---- */
-  .medit-item { background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  .medit-item { background: #fff; border-radius: 14px; padding: 12px 14px 14px; margin-bottom: 14px; }
   .medit-top { display: flex; align-items: center; gap: 8px; }
   .medit-top .nm { font-size: 15px; font-weight: 700; color: var(--navy); }
-  .medit-top .rm { margin-left: auto; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
-  .medit-goals { display: flex; gap: 10px; margin-top: 10px; }
-  .medit-weight { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 7px 10px; margin-top: 10px; }
-  .medit-weight .gl { font-size: 12px; color: var(--secondary); font-weight: 600; }
-  .medit-weight .gpm { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: var(--navy); font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .medit-weight .mw-input { flex: 1; min-width: 0; text-align: center; font-size: 16px; font-weight: 700; color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
+  .medit-top .rm { margin-left: auto; width: 44px; height: 44px; margin-right: -10px; margin-top: -6px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
+  .medit-goals { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .medit-weight { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 12px; padding: 6px 8px; margin-top: 10px; }
+  .medit-weight .gl { font-size: 13px; color: var(--secondary); font-weight: 600; width: 44px; padding-left: 4px; }
+  .medit-weight .gpm { width: 44px; height: 44px; border-radius: 10px; background: #fff; color: var(--navy); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .medit-weight .gpm:active { background: #e8e8ee; }
+  .medit-weight .mw-input { flex: 1; min-width: 0; text-align: center; font-size: 17px; font-weight: 700; color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
   .medit-weight .mw-input:focus { outline: none; }
   .medit-weight .mw-input::placeholder { color: var(--tertiary); font-weight: 500; }
   .medit-weight .wu { font-size: 12px; color: var(--secondary); font-weight: 500; }
-  .medit-goals .goal { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 7px 10px; }
-  .medit-goals .gl { font-size: 12px; color: var(--secondary); font-weight: 600; }
-  .medit-goals .gpm { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: var(--navy); font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-  .medit-goals .gv { min-width: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--navy); margin-left: auto; }
-  .medit-goals .goal .gpm:last-child { margin-left: 0; }
+  .medit-goals .goal { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 12px; padding: 6px 8px; }
+  .medit-goals .gl { font-size: 13px; color: var(--secondary); font-weight: 600; width: 44px; padding-left: 4px; }
+  .medit-goals .gpm { width: 44px; height: 44px; border-radius: 10px; background: #fff; color: var(--navy); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .medit-goals .gpm:active { background: #e8e8ee; }
+  .medit-goals .gv { flex: 1; text-align: center; font-size: 17px; font-weight: 700; color: var(--navy); }
 
   /* ---- target badge in record ---- */
   .ex-target { font-size: 12px; font-weight: 600; color: var(--amber); background: var(--amber-soft); border-radius: 8px; padding: 6px 10px; margin: 2px 0 4px; }
@@ -180,7 +181,7 @@
   .cat-h.low { color: var(--tertiary); }
   .ex-li.lowkey-ex { opacity: 0.6; }
   .ex-li.lowkey-ex .badge { opacity: 0.7; }
-  .star { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin-left: -4px; flex-shrink: 0; }
+  .star { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: -4px; flex-shrink: 0; }
   .star svg { width: 22px; height: 22px; }
   .star-mini { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; margin-left: auto; flex-shrink: 0; }
   .star-mini svg { width: 19px; height: 19px; }
@@ -212,20 +213,20 @@
   .reset-w { font-size: 12px; color: var(--amber); font-weight: 600; margin-left: 8px; padding: 2px 4px; }
   .reset-w:active { opacity: 0.6; }
   .stepper .ctrl { display: flex; align-items: center; gap: 10px; }
-  .stepper .pm { width: 36px; height: 36px; border-radius: 10px; background: var(--bg); color: var(--navy); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .stepper .pm { width: 44px; height: 44px; border-radius: 10px; background: var(--bg); color: var(--navy); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
   .stepper .pm:active { background: #e2e2e7; }
   .num-input { width: 78px; text-align: center; font-size: 21px; font-weight: 700; color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
   .num-input:focus { outline: none; }
   .stepper .unit { font-size: 12px; color: var(--secondary); font-weight: 500; margin-left: -4px; }
   .step-pills { display: flex; align-items: center; gap: 6px; margin: -2px 2px 14px; flex-wrap: wrap; }
   .step-pills .sp-lbl { font-size: 12px; color: var(--secondary); font-weight: 600; margin-right: 2px; }
-  .step-pills button { padding: 7px 13px; border-radius: 9px; background: #fff; color: var(--secondary); font-size: 13px; font-weight: 600; border: 1px solid var(--sep); }
+  .step-pills button { padding: 11px 15px; min-height: 42px; border-radius: 9px; background: #fff; color: var(--secondary); font-size: 13px; font-weight: 600; border: 1px solid var(--sep); }
   .step-pills button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   .rpe-box { background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
   .rpe-box .lbl { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
   .rpe-box .lbl .opt { font-size: 11px; color: var(--secondary); font-weight: 500; margin-left: 6px; }
   .rpe-scale { display: flex; gap: 5px; margin-top: 10px; }
-  .rpe-scale button { flex: 1; text-align: center; padding: 9px 0; border-radius: 9px; font-size: 14px; font-weight: 700; background: var(--bg); color: var(--secondary); }
+  .rpe-scale button { flex: 1; text-align: center; padding: 13px 0; min-height: 46px; border-radius: 9px; font-size: 14px; font-weight: 700; background: var(--bg); color: var(--secondary); }
   .rpe-scale button.on { background: var(--amber); color: #fff; }
   .sheet-save { width: 100%; padding: 15px; background: var(--amber); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin-top: 4px; }
   .sheet-del { width: 100%; padding: 13px; color: var(--red); font-size: 15px; font-weight: 600; text-align: center; margin-top: 6px; }
@@ -238,6 +239,15 @@
   .pick-cat.fav { color: var(--amber); }
   .pick-cat.low { color: var(--tertiary); }
   .pick-item.low { opacity: 0.62; }
+  .pick-item { min-height: 52px; }
+  .pick-item.selected { background: var(--navy-soft); box-shadow: inset 0 0 0 2px var(--navy); }
+  .pick-item.used { opacity: 0.4; }
+  .pick-check { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--sep); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .pick-check.on { background: var(--navy); border-color: var(--navy); }
+  .ck.used { margin-left: auto; font-size: 12px; color: var(--tertiary); font-weight: 600; }
+  .pick-footer { position: sticky; bottom: 0; padding: 10px 0 4px; background: linear-gradient(transparent, var(--bg) 30%); }
+  .pick-confirm { width: 100%; padding: 15px; background: var(--amber); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; }
+  .pick-confirm:disabled { background: var(--tertiary); }
   .pick-item { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 7px; font-size: 16px; font-weight: 600; color: var(--ink); }
   .pick-item:active { background: #f0f0f3; }
   .pick-item .ck { margin-left: auto; color: var(--amber); font-weight: 700; }
@@ -432,7 +442,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '1.9.0';
+  const APP_VERSION = '2.0.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -582,12 +592,12 @@
         en.sets.forEach((s, si) => {
           html += `<div class="set-row" data-editset="${ei}:${si}">
             <span class="set-no">${si+1}</span>
-            <span class="set-val">${fmtNum(s.w)}<span class="u">kg</span> × ${s.r}<span class="u">回</span></span>
+            <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
             ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : ''}
           </div>`;
         });
         const pv = prevSetFor(en.exerciseId, date, en.sets.length);
-        const hint = pv ? ` <span class="hint">前回 ${fmtNum(pv.w)}kg × ${pv.r}</span>` : '';
+        const hint = pv ? ` <span class="hint">前回 ${pv.r}回 × ${fmtNum(pv.w)}kg</span>` : '';
         html += `<button class="add-set" data-addset="${ei}">＋ セットを追加${hint}</button></div>`;
       });
     } else {
@@ -651,7 +661,7 @@
 
     html += `<div class="sect-label">記録</div>`;
     points.slice().reverse().forEach(p => {
-      const summary = p.sets.map(s => `${fmtNum(s.w)}×${s.r}${s.rpe?`(R${s.rpe})`:''}`).join(' / ');
+      const summary = p.sets.map(s => `${s.r}×${fmtNum(s.w)}kg${s.rpe?`(R${s.rpe})`:''}`).join(' / ');
       html += `<div class="hist-row"><span class="hist-d">${fmtDate(p.date)}</span><span class="hist-v">${summary}</span></div>`;
     });
     body.innerHTML = html;
@@ -749,7 +759,11 @@
   // 予定の操作（イベント委任）
   $('#planBody').addEventListener('click', async (e) => {
     const rm = e.target.closest('[data-planrm]');
-    if (rm) { state.plan = state.plan.filter(id => id !== rm.dataset.planrm); savePlan(); renderPlan(); return; }
+    if (rm) {
+      const ex = exById(rm.dataset.planrm);
+      if (!confirm(`「${ex ? ex.name : '種目'}」を予定から外しますか？`)) return;
+      state.plan = state.plan.filter(id => id !== rm.dataset.planrm); savePlan(); renderPlan(); return;
+    }
     const start = e.target.closest('#planStart');
     if (start) { await startPlanToday(); return; }
     const act = e.target.closest('[data-planact]');
@@ -823,7 +837,7 @@
     let html = '';
     for (const m of menus) {
       const items = (m.items||[]).filter(it => exById(it.exerciseId));
-      const summary = items.map(it => `${esc(exById(it.exerciseId).name)} ${it.sets}×${it.reps}`).join('　/　');
+      const summary = items.map(it => `${esc(exById(it.exerciseId).name)} ${it.weight?fmtNum(it.weight)+"kg ":""}${it.reps}回×${it.sets}s`).join('　/　');
       html += `<div class="menu-card">
         <div class="menu-card-h">
           <span class="menu-name">${esc(m.name)}</span>
@@ -911,11 +925,11 @@
             <button class="gpm" data-mwt="${i}:1">＋</button>
           </div>
           <div class="medit-goals">
-            <div class="goal"><span class="gl">セット</span>
-              <button class="gpm" data-mset="${i}:-1">−</button><span class="gv" id="msetv${i}">${it.sets}</span><button class="gpm" data-mset="${i}:1">＋</button>
-            </div>
             <div class="goal"><span class="gl">回数</span>
               <button class="gpm" data-mreps="${i}:-1">−</button><span class="gv" id="mrepsv${i}">${it.reps}</span><button class="gpm" data-mreps="${i}:1">＋</button>
+            </div>
+            <div class="goal"><span class="gl">セット</span>
+              <button class="gpm" data-mset="${i}:-1">−</button><span class="gv" id="msetv${i}">${it.sets}</span><button class="gpm" data-mset="${i}:1">＋</button>
             </div>
           </div>
         </div>`;
@@ -943,7 +957,12 @@
       return;
     }
     const rm = e.target.closest('[data-mremove]');
-    if (rm) { m.items.splice(parseInt(rm.dataset.mremove,10),1); renderMenuEdit(); return; }
+    if (rm) {
+      const i = parseInt(rm.dataset.mremove,10);
+      const ex = exById(m.items[i].exerciseId);
+      if (!confirm(`「${ex ? ex.name : '種目'}」をメニューから外しますか？`)) return;
+      m.items.splice(i,1); renderMenuEdit(); return;
+    }
     const addEx = e.target.closest('#menuAddEx');
     if (addEx) { openExercisePicker('menu'); return; }
     const delB = e.target.closest('#menuDelete');
@@ -1074,7 +1093,7 @@
     let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
 
     const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
-    const subText = pv ? `前回 ${fmtNum(pv.w)}kg × ${pv.r}${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
+    const subText = pv ? `前回 ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
 
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -1082,6 +1101,12 @@
       <div class="grabber"></div>
       <h3>${esc(ex.name)}・${setIndex+1}セット目</h3>
       <div class="sub">${subText}</div>
+      <div class="rpe-box">
+        <div class="lbl">回数</div>
+        <div class="rpe-scale" id="repScale">
+          ${REP_CHOICES.map(n=>`<button data-rep="${n}" class="${cur.r===n?'on':''}">${n}</button>`).join('')}
+        </div>
+      </div>
       <div class="stepper">
         <span class="lbl">重量 <button class="reset-w" id="resetW">↺ ${fmtNum(init.w)}kg</button></span>
         <div class="ctrl">
@@ -1094,12 +1119,6 @@
       <div class="step-pills" id="wStepPills">
         <span class="sp-lbl">刻み</span>
         ${WEIGHT_STEPS.map(s=>`<button data-step="${s}" class="${s===state.weightStep?'on':''}">${fmtNum(s)}kg</button>`).join('')}
-      </div>
-      <div class="rpe-box">
-        <div class="lbl">回数</div>
-        <div class="rpe-scale" id="repScale">
-          ${REP_CHOICES.map(n=>`<button data-rep="${n}" class="${cur.r===n?'on':''}">${n}</button>`).join('')}
-        </div>
       </div>
       <div class="rpe-box">
         <div class="lbl">RPE<span class="opt">任意・きつさの主観（6〜10）</span></div>
@@ -1156,7 +1175,7 @@
     });
   }
 
-  // ---------- 種目ピッカー（記録に種目追加 / 推移で選択 / 予定に追加） ----------
+  // ---------- 種目ピッカー（選択→確定ボタン方式） ----------
   function openExercisePicker(mode='record') {
     const w = mode==='record' ? workoutByDate(state.recDate) : null;
     let usedIds;
@@ -1165,11 +1184,32 @@
     else if (mode==='menu') usedIds = new Set((state.editingMenu?.items||[]).map(it=>it.exerciseId));
     else usedIds = new Set();
 
+    const multi = (mode !== 'select'); // record/plan/menuは複数選択可
+    const selected = new Set();
+    if (mode==='select' && state.progExId) selected.add(state.progExId);
+
     const titleMap = { record: '種目を追加', select: '種目を選ぶ', plan: '予定に種目を追加', menu: 'メニューに種目を追加' };
+    const subMap = { record: 'タップで選択（複数可）→ 下のボタンで追加', select: 'タップで選択 → 下のボタンで決定', plan: 'タップで選択（複数可）→ 下のボタンで追加', menu: 'タップで選択（複数可）→ 下のボタンで追加' };
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
-    sheet.innerHTML = `<div class="grabber"></div><h3>${titleMap[mode]||'種目を選ぶ'}</h3><div class="sub"></div><div class="pick-list"></div>`;
+    sheet.innerHTML = `
+      <div class="grabber"></div>
+      <h3>${titleMap[mode]||'種目を選ぶ'}</h3>
+      <div class="sub">${subMap[mode]||''}</div>
+      <div class="pick-list"></div>
+      <div class="pick-footer">
+        <button class="pick-confirm" id="pickConfirm" disabled>種目を選んでください</button>
+      </div>`;
     const listEl = sheet.querySelector('.pick-list');
+    const confirmBtn = sheet.querySelector('#pickConfirm');
+
+    function updateConfirm() {
+      const n = selected.size;
+      confirmBtn.disabled = (n === 0);
+      if (n === 0) { confirmBtn.textContent = '種目を選んでください'; return; }
+      if (mode === 'select') { const ex = exById([...selected][0]); confirmBtn.textContent = `「${ex.name}」の推移を見る`; }
+      else confirmBtn.textContent = `${n}種目を追加する`;
+    }
 
     function buildList() {
       let inner = '';
@@ -1178,49 +1218,59 @@
         inner += `<div class="pick-cat ${g.key==='fav'?'fav':''} ${isLow?'low':''}">${g.label}</div>`;
         for (const ex of g.items) {
           const used = usedIds.has(ex.id);
-          const sel = (mode==='select' && state.progExId===ex.id);
+          const sel = selected.has(ex.id);
           const usedLabel = mode==='plan' ? '予定済み' : '追加済み';
-          let right = used ? `<span class="ck">${usedLabel}</span>`
-                    : (sel ? '<span class="ck">✓</span>'
-                           : `<button class="star-mini" data-favtoggle="${ex.id}" aria-label="お気に入り">${ex.fav?STAR_ON:STAR_OFF}</button>`);
-          inner += `<div class="pick-item ${isLow?'low':''}" data-pick="${ex.id}" style="${used?'opacity:.4;':''}">
+          const right = used ? `<span class="ck used">${usedLabel}</span>`
+                             : `<span class="pick-check ${sel?'on':''}">${sel?'✓':''}</span>`;
+          inner += `<div class="pick-item ${isLow?'low':''} ${sel?'selected':''} ${used?'used':''}" data-pick="${ex.id}">
             <span>${esc(ex.name)}</span>${right}
           </div>`;
         }
       }
       listEl.innerHTML = inner;
+      updateConfirm();
     }
     buildList();
     openSheet(sheet);
 
-    listEl.addEventListener('click', async (e) => {
-      const favBtn = e.target.closest('[data-favtoggle]');
-      if (favBtn) { await toggleFav(favBtn.dataset.favtoggle); buildList(); renderEx(); return; }
+    listEl.addEventListener('click', (e) => {
       const item = e.target.closest('[data-pick]'); if (!item) return;
       const exId = item.dataset.pick;
+      if (usedIds.has(exId)) { toast('すでに追加済みです'); return; }
+      if (multi) {
+        if (selected.has(exId)) selected.delete(exId); else selected.add(exId);
+      } else {
+        selected.clear(); selected.add(exId);
+      }
+      buildList();
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+      if (!selected.size) return;
+      const ids = [...selected];
       if (mode==='record') {
-        if (usedIds.has(exId)) { closeSheet(); switchToEntry(exId); return; }
         const wk = await ensureWorkout(state.recDate);
-        wk.entries.push({ exerciseId: exId, sets: [] });
+        for (const exId of ids) {
+          if (!wk.entries.some(en => en.exerciseId === exId)) wk.entries.push({ exerciseId: exId, sets: [] });
+        }
         await saveWorkout(wk);
         closeSheet(); renderRec();
-        const ei = (workoutByDate(state.recDate)).entries.findIndex(en=>en.exerciseId===exId);
-        setTimeout(()=> openSetSheet(ei, null), 280);
+        toast(`${ids.length}種目を追加しました`);
       } else if (mode==='plan') {
-        if (usedIds.has(exId)) return;
-        state.plan.push(exId); savePlan();
-        usedIds.add(exId); buildList(); renderPlan();
+        for (const exId of ids) if (!state.plan.includes(exId)) state.plan.push(exId);
+        savePlan();
+        closeSheet(); renderPlan();
+        toast(`${ids.length}種目を予定に追加`);
       } else if (mode==='menu') {
-        if (usedIds.has(exId)) return;
-        if (state.editingMenu) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
-        usedIds.add(exId); buildList(); renderMenuEdit();
+        if (state.editingMenu) for (const exId of ids) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
+        closeSheet(); renderMenuEdit();
+        toast(`${ids.length}種目をメニューに追加`);
       } else {
-        state.progExId = exId;
+        state.progExId = ids[0];
         closeSheet(); renderProg();
       }
     });
   }
-  function switchToEntry(exId){ /* 既に追加済みの種目を押したら何もしない（記録済み表示） */ toast('すでに追加済みです'); }
 
   $('#progExSelect').addEventListener('click', () => openExercisePicker('select'));
   $('#progBody').addEventListener('click', (e) => {
