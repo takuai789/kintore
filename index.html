@@ -92,8 +92,11 @@
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
   .set-val .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
   .set-rpe { margin-left: auto; font-size: 11px; font-weight: 700; color: #fff; background: var(--amber); padding: 3px 8px; border-radius: 7px; }
-  .add-set { width: 100%; text-align: center; padding: 10px; color: var(--amber); font-size: 13px; font-weight: 600; border-top: 1px solid var(--sep); margin-top: 2px; }
+  .add-row { display: flex; align-items: stretch; gap: 8px; border-top: 1px solid var(--sep); margin-top: 2px; }
+  .add-set { flex: 1; text-align: center; padding: 12px 4px; min-height: 46px; color: var(--amber); font-size: 13px; font-weight: 600; }
   .add-set .hint { color: var(--tertiary); font-weight: 500; }
+  .repeat-set { flex-shrink: 0; padding: 8px 12px; min-height: 40px; margin: 5px 0; border-radius: 10px; background: var(--navy-soft); color: var(--navy); font-size: 13px; font-weight: 700; }
+  .repeat-set:active { background: #d5deea; }
   .add-ex { width: 100%; padding: 15px; background: var(--navy); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin-top: 4px; }
   .empty { text-align: center; color: var(--secondary); font-size: 14px; padding: 40px 20px; line-height: 1.8; }
   .empty .em { font-size: 40px; display: block; margin-bottom: 8px; }
@@ -104,23 +107,6 @@
   .tab.active { color: var(--navy); }
   .tab svg { width: 24px; height: 24px; }
 
-  /* ---- progress ---- */
-  .seg { display: flex; background: rgba(120,120,128,0.12); border-radius: 9px; padding: 2px; margin-bottom: 16px; }
-  .seg button { flex: 1; text-align: center; padding: 7px 0; font-size: 13px; font-weight: 600; color: var(--secondary); border-radius: 7px; }
-  .seg button.on { background: #fff; color: var(--navy); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-  .ex-select { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--sep); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 15px; font-weight: 600; color: var(--navy); }
-  .ex-select .chev { color: var(--secondary); }
-  .chart-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-  .chart-card .ttl { font-size: 13px; color: var(--secondary); font-weight: 600; }
-  .chart-card .big { font-size: 27px; font-weight: 700; color: var(--navy); margin-top: 2px; }
-  .chart-card .big .u { font-size: 13px; color: var(--secondary); font-weight: 500; }
-  .chart-card .delta { font-size: 12px; font-weight: 700; margin-left: 8px; }
-  .chart-card .delta.up { color: var(--green); }
-  .chart-card .delta.down { color: var(--red); }
-  .chart-card .delta.flat { color: var(--secondary); }
-  .hist-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--sep); }
-  .hist-d { font-size: 13px; color: var(--secondary); font-weight: 600; white-space: nowrap; padding-top: 1px; }
-  .hist-v { font-size: 14px; font-weight: 600; color: var(--navy); text-align: right; line-height: 1.5; }
   .sect-label { font-size: 12px; font-weight: 700; color: var(--secondary); margin: 4px 2px 8px; }
 
   /* ---- plan ---- */
@@ -273,6 +259,33 @@
   #toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 90px); transform: translate(-50%, 20px); background: rgba(30,58,95,0.96); color: #fff; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 900; opacity: 0; transition: all 0.3s; pointer-events: none; }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+  /* ---- rest timer ---- */
+  #restBar {
+    position: fixed; left: 10px; right: 10px; top: calc(var(--safe-top) + 6px); z-index: 800;
+    background: var(--navy); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(30,58,95,0.4);
+    transform: translateY(-140%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+  }
+  #restBar.show { transform: translateY(0); }
+  #restBar .rest-fill { position: absolute; inset: 0; width: 100%; background: rgba(245,158,11,0.35); transition: width 0.25s linear; }
+  #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+  #restBar .rest-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
+  #restBar .rest-time { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; min-width: 64px; }
+  #restBar .rest-btn { margin-left: auto; padding: 10px 14px; min-height: 42px; border-radius: 10px; background: rgba(255,255,255,0.16); color: #fff; font-size: 13px; font-weight: 700; }
+  #restBar .rest-btn.skip { margin-left: 0; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); }
+  #restFlash {
+    position: fixed; inset: 0; z-index: 950; background: rgba(245,158,11,0.92);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.35s; pointer-events: none;
+  }
+  #restFlash.show { opacity: 1; }
+  #restFlash .rest-flash-msg { font-size: 30px; font-weight: 700; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+
+  /* 設定の休憩ピル */
+  .rest-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .rest-pills button { padding: 11px 16px; min-height: 44px; border-radius: 999px; background: #fff; color: var(--secondary); font-size: 14px; font-weight: 600; border: 1px solid var(--sep); }
+  .rest-pills button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+
   /* update banner */
   #updateBanner {
     position: fixed; left: 12px; right: 12px;
@@ -308,22 +321,6 @@
         <button class="arrow" id="dateNext" aria-label="次の日">›</button>
       </div>
       <div id="recBody"></div>
-    </div>
-  </div>
-
-  <!-- ===== 推移 ===== -->
-  <div id="progView" class="view">
-    <div class="navbar">
-      <div class="nav-side"></div>
-      <span class="title">推移</span>
-      <div class="nav-side right"></div>
-    </div>
-    <div class="scroll">
-      <button class="ex-select" id="progExSelect">
-        <span id="progExName">種目を選ぶ</span>
-        <span class="chev">▾</span>
-      </button>
-      <div id="progBody"></div>
     </div>
   </div>
 
@@ -380,10 +377,6 @@
     <button class="tab" data-tab="menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"/><path d="m4 7 8 4.5L20 7"/><path d="M12 20v-8.5"/></svg>
       <span>メニュー</span>
-    </button>
-    <button class="tab" data-tab="prog">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-      <span>推移</span>
     </button>
     <button class="tab" data-tab="ex">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -442,7 +435,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '2.0.0';
+  const APP_VERSION = '2.3.1';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -463,9 +456,9 @@
     workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,rpe}]}],updatedAt}
     tab: 'rec',
     recDate: todayStr(),
-    progExId: null,
-    progMetric: '1rm', // 'weight' | '1rm' | 'volume'
     weightStep: 2.5,   // 重量の増減刻み（端末に記憶）
+    restSec: 90,       // レストタイマー秒数（端末に記憶・0でオフ）
+    restEndAt: 0,      // 実行中タイマーの終了時刻(ms)。0=停止
     plan: [],          // 次回の予定（種目IDの配列・端末に記憶）
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
@@ -547,8 +540,6 @@
     }
   }
 
-  // 推定1RM (Epley)
-  const est1RM = (w, r) => r > 0 ? w * (1 + r/30) : 0;
 
   // 前回値プレフィル: 指定種目の、beforeDateより前の最新ワークアウトの、setIndex番目（無ければ最後）のセット
   function prevSetFor(exId, beforeDate, setIndex) {
@@ -596,95 +587,19 @@
             ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : ''}
           </div>`;
         });
-        const pv = prevSetFor(en.exerciseId, date, en.sets.length);
+        const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date, 0);
         const hint = pv ? ` <span class="hint">前回 ${pv.r}回 × ${fmtNum(pv.w)}kg</span>` : '';
-        html += `<button class="add-set" data-addset="${ei}">＋ セットを追加${hint}</button></div>`;
+        const last = en.sets[en.sets.length-1];
+        html += `<div class="add-row">
+          <button class="add-set" data-addset="${ei}">＋ セットを追加${hint}</button>
+          ${last ? `<button class="repeat-set" data-repeatset="${ei}" aria-label="同じ内容でもう1セット">🔁 ${last.r}×${fmtNum(last.w)}kg</button>` : ''}
+        </div></div>`;
       });
     } else {
       html += `<div class="empty"><span class="em">🏋️</span>この日の記録はまだありません。<br>下のボタンから種目を追加しましょう。</div>`;
     }
     html += `<button class="add-ex" id="addExToDay">＋ 種目を追加</button>`;
     body.innerHTML = html;
-  }
-
-  // ---------- render: 推移 ----------
-  function renderProg() {
-    const ex = state.progExId ? exById(state.progExId) : null;
-    $('#progExName').textContent = ex ? ex.name : '種目を選ぶ';
-    const body = $('#progBody');
-    if (!ex) { body.innerHTML = `<div class="empty"><span class="em">📈</span>上のボタンから種目を選ぶと<br>推移グラフが表示されます。</div>`; return; }
-
-    // この種目を含むワークアウトを日付順に
-    const points = [];
-    state.workouts.slice().sort((a,b)=> a.id<b.id?-1:1).forEach(w => {
-      const e = w.entries.find(en => en.exerciseId === ex.id);
-      if (!e || !e.sets.length) return;
-      let val;
-      if (state.progMetric === 'weight') val = Math.max(...e.sets.map(s => s.w));
-      else if (state.progMetric === 'volume') val = e.sets.reduce((t,s)=> t + s.w*s.r, 0);
-      else val = Math.max(...e.sets.map(s => est1RM(s.w, s.r)));
-      points.push({ date: w.id, value: val, sets: e.sets });
-    });
-
-    const metricMeta = {
-      weight: { label: '最大重量', unit: 'kg', round: (v)=>fmtNum(v) },
-      '1rm':  { label: '推定1RM', unit: 'kg', round: (v)=>fmtNum(Math.round(v*10)/10) },
-      volume: { label: '総ボリューム', unit: 'kg', round: (v)=>fmtNum(Math.round(v)) },
-    }[state.progMetric];
-
-    let html = `<div class="seg">
-      <button data-metric="weight" class="${state.progMetric==='weight'?'on':''}">重量</button>
-      <button data-metric="1rm" class="${state.progMetric==='1rm'?'on':''}">推定1RM</button>
-      <button data-metric="volume" class="${state.progMetric==='volume'?'on':''}">ボリューム</button>
-    </div>`;
-
-    if (!points.length) {
-      html += `<div class="empty">まだ記録がありません。</div>`;
-      body.innerHTML = html; return;
-    }
-
-    const latest = points[points.length-1].value;
-    let deltaHtml = '';
-    if (points.length >= 2) {
-      const prev = points[points.length-2].value;
-      const d = latest - prev;
-      const cls = d > 0.05 ? 'up' : (d < -0.05 ? 'down' : 'flat');
-      const sign = d > 0.05 ? '▲ +' : (d < -0.05 ? '▼ ' : '＝ ');
-      deltaHtml = `<span class="delta ${cls}">${sign}${metricMeta.round(Math.abs(d))}${cls==='flat'?'':metricMeta.unit} / 前回比</span>`;
-    }
-
-    html += `<div class="chart-card">
-      <div class="ttl">${metricMeta.label}（最新）</div>
-      <div class="big">${metricMeta.round(latest)}<span class="u">${metricMeta.unit}</span>${deltaHtml}</div>
-      ${lineChartSVG(points.map(p=>p.value))}
-    </div>`;
-
-    html += `<div class="sect-label">記録</div>`;
-    points.slice().reverse().forEach(p => {
-      const summary = p.sets.map(s => `${s.r}×${fmtNum(s.w)}kg${s.rpe?`(R${s.rpe})`:''}`).join(' / ');
-      html += `<div class="hist-row"><span class="hist-d">${fmtDate(p.date)}</span><span class="hist-v">${summary}</span></div>`;
-    });
-    body.innerHTML = html;
-  }
-
-  function lineChartSVG(values) {
-    if (values.length < 2) {
-      return `<div style="padding:24px 0 6px;text-align:center;color:var(--secondary);font-size:13px;">記録が2回以上で<br>グラフが描かれます</div>`;
-    }
-    const W = 300, H = 120, pad = 8;
-    const min = Math.min(...values), max = Math.max(...values);
-    const range = (max - min) || 1;
-    const n = values.length;
-    const x = (i) => pad + (W - pad*2) * (i/(n-1));
-    const y = (v) => (H - pad) - (H - pad*2) * ((v - min)/range);
-    const pts = values.map((v,i)=> `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-    const lastX = x(n-1), lastY = y(values[n-1]);
-    const areaPts = `${pad},${H-pad} ${pts} ${(W-pad)},${H-pad}`;
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:120px;margin-top:12px;overflow:visible;">
-      <polygon points="${areaPts}" fill="rgba(245,158,11,0.10)"/>
-      <polyline points="${pts}" fill="none" stroke="#f59e0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="5" fill="#f59e0b"/>
-    </svg>`;
   }
 
   // ---------- render: 種目 ----------
@@ -711,7 +626,7 @@
 
   // ---------- 共通 render ----------
   function renderAll() {
-    renderRec(); renderProg(); renderEx(); renderPlan(); renderMenu();
+    renderRec(); renderEx(); renderPlan(); renderMenu();
   }
 
   // ---------- render: 次回の予定 ----------
@@ -889,7 +804,6 @@
     $('#recView').classList.remove('active');
     $('#planView').classList.remove('active');
     $('#menuView').classList.remove('active');
-    $('#progView').classList.remove('active');
     $('#exView').classList.remove('active');
     $('#menuEditView').classList.add('active');
     renderMenuEdit();
@@ -1017,7 +931,6 @@
     $('#recView').classList.toggle('active', tab==='rec');
     $('#planView').classList.toggle('active', tab==='plan');
     $('#menuView').classList.toggle('active', tab==='menu');
-    $('#progView').classList.toggle('active', tab==='prog');
     $('#exView').classList.toggle('active', tab==='ex');
     $('#menuEditView').classList.remove('active'); // タブ切替で編集画面は閉じる
     if (tab==='plan') renderPlan();
@@ -1034,6 +947,8 @@
   $('#recBody').addEventListener('click', (e) => {
     const addEx = e.target.closest('#addExToDay');
     if (addEx) { openExercisePicker(); return; }
+    const rep = e.target.closest('[data-repeatset]');
+    if (rep) { repeatLastSet(parseInt(rep.dataset.repeatset,10)); return; }
     const addSet = e.target.closest('[data-addset]');
     if (addSet) { openSetSheet(parseInt(addSet.dataset.addset,10), null); return; }
     const editSet = e.target.closest('[data-editset]');
@@ -1041,6 +956,18 @@
     const delEx = e.target.closest('[data-delex]');
     if (delEx) { confirmDelEntry(parseInt(delEx.dataset.delex,10)); return; }
   });
+
+  // 直前セットと同じ内容でもう1セット記録
+  async function repeatLastSet(ei) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const entry = w.entries[ei];
+    const last = entry.sets[entry.sets.length-1]; if (!last) return;
+    entry.sets.push({ w: last.w, r: last.r, rpe: last.rpe || null });
+    await saveWorkout(w);
+    renderRec();
+    toast(`${entry.sets.length}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`);
+    if (state.recDate === todayStr()) startRest();
+  }
 
   async function confirmDelEntry(ei) {
     const w = workoutByDate(state.recDate); if (!w) return;
@@ -1082,18 +1009,18 @@
     const isNew = (si === null);
     const setIndex = isNew ? entry.sets.length : si;
 
-    // 初期値: 既存編集ならその値、新規なら前回値→直前セット→デフォルト
+    // 初期値: 既存編集ならその値、新規なら「今日の直前セット」→前回値→デフォルトの順
     let init;
     if (!isNew) init = { ...entry.sets[si] };
     else {
-      const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
       const last = entry.sets[entry.sets.length-1];
-      init = pv ? { w: pv.w, r: pv.r, rpe: null } : (last ? { w: last.w, r: last.r, rpe: null } : { w: 20, r: 3, rpe: null });
+      const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
+      init = last ? { w: last.w, r: last.r, rpe: null } : (pv ? { w: pv.w, r: pv.r, rpe: null } : { w: 20, r: 3, rpe: null });
     }
     let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
 
     const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
-    const subText = pv ? `前回 ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
+    const subText = pv ? `前回のトレ: ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
 
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -1166,6 +1093,7 @@
       if (isNew) entry.sets.push(setObj); else entry.sets[si] = setObj;
       await saveWorkout(w);
       closeSheet(); renderRec();
+      if (isNew && state.recDate === todayStr()) startRest(); // 今日の新規セットのみタイマー開始
     });
     if (!isNew) sheet.querySelector('#setDel').addEventListener('click', async () => {
       entry.sets.splice(si, 1);
@@ -1174,6 +1102,75 @@
       closeSheet(); renderRec();
     });
   }
+
+  // ===================== レストタイマー =====================
+  let restTick = null;
+  let restTotalMs = 0;
+  function startRest() {
+    if (!state.restSec) return; // 0=オフ
+    restTotalMs = state.restSec * 1000;
+    state.restEndAt = Date.now() + restTotalMs;
+    ensureRestBar();
+    if (restTick) clearInterval(restTick);
+    restTick = setInterval(updateRestBar, 250);
+    updateRestBar();
+  }
+  function stopRest(finished) {
+    state.restEndAt = 0;
+    if (restTick) { clearInterval(restTick); restTick = null; }
+    const bar = $('#restBar');
+    if (bar) { bar.classList.remove('show'); setTimeout(() => bar.remove(), 300); }
+    if (finished) restFinishEffect();
+  }
+  function extendRest(sec) {
+    if (!state.restEndAt) return;
+    state.restEndAt += sec * 1000;
+    restTotalMs += sec * 1000;
+    updateRestBar();
+  }
+  function ensureRestBar() {
+    if ($('#restBar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'restBar';
+    bar.innerHTML = `
+      <div class="rest-fill" id="restFill"></div>
+      <div class="rest-inner">
+        <span class="rest-label">休憩</span>
+        <span class="rest-time" id="restTime">--</span>
+        <button class="rest-btn" id="restPlus">+30秒</button>
+        <button class="rest-btn skip" id="restSkip">スキップ</button>
+      </div>`;
+    document.body.appendChild(bar);
+    bar.querySelector('#restPlus').addEventListener('click', () => extendRest(30));
+    bar.querySelector('#restSkip').addEventListener('click', () => stopRest(false));
+    requestAnimationFrame(() => bar.classList.add('show'));
+  }
+  function updateRestBar() {
+    const remain = state.restEndAt - Date.now();
+    if (remain <= 0) { stopRest(true); return; }
+    const t = $('#restTime'); const f = $('#restFill');
+    if (t) {
+      const s = Math.ceil(remain / 1000);
+      t.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    }
+    if (f) {
+      const pct = Math.max(0, Math.min(100, (remain / Math.max(restTotalMs, 1)) * 100));
+      f.style.width = pct + '%';
+    }
+  }
+  function restFinishEffect() {
+    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (_) {}
+    const flash = document.createElement('div');
+    flash.id = 'restFlash';
+    flash.innerHTML = `<div class="rest-flash-msg">💪 休憩おわり！</div>`;
+    document.body.appendChild(flash);
+    requestAnimationFrame(() => flash.classList.add('show'));
+    setTimeout(() => { flash.classList.remove('show'); setTimeout(() => flash.remove(), 400); }, 1600);
+  }
+  // バックグラウンドから戻ったとき、経過を反映（iOSはinterval停止するため）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.restEndAt) updateRestBar();
+  });
 
   // ---------- 種目ピッカー（選択→確定ボタン方式） ----------
   function openExercisePicker(mode='record') {
@@ -1184,12 +1181,10 @@
     else if (mode==='menu') usedIds = new Set((state.editingMenu?.items||[]).map(it=>it.exerciseId));
     else usedIds = new Set();
 
-    const multi = (mode !== 'select'); // record/plan/menuは複数選択可
     const selected = new Set();
-    if (mode==='select' && state.progExId) selected.add(state.progExId);
 
-    const titleMap = { record: '種目を追加', select: '種目を選ぶ', plan: '予定に種目を追加', menu: 'メニューに種目を追加' };
-    const subMap = { record: 'タップで選択（複数可）→ 下のボタンで追加', select: 'タップで選択 → 下のボタンで決定', plan: 'タップで選択（複数可）→ 下のボタンで追加', menu: 'タップで選択（複数可）→ 下のボタンで追加' };
+    const titleMap = { record: '種目を追加', plan: '予定に種目を追加', menu: 'メニューに種目を追加' };
+    const subMap = { record: 'タップで選択（複数可）→ 下のボタンで追加', plan: 'タップで選択（複数可）→ 下のボタンで追加', menu: 'タップで選択（複数可）→ 下のボタンで追加' };
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.innerHTML = `
@@ -1206,9 +1201,7 @@
     function updateConfirm() {
       const n = selected.size;
       confirmBtn.disabled = (n === 0);
-      if (n === 0) { confirmBtn.textContent = '種目を選んでください'; return; }
-      if (mode === 'select') { const ex = exById([...selected][0]); confirmBtn.textContent = `「${ex.name}」の推移を見る`; }
-      else confirmBtn.textContent = `${n}種目を追加する`;
+      confirmBtn.textContent = (n === 0) ? '種目を選んでください' : `${n}種目を追加する`;
     }
 
     function buildList() {
@@ -1237,11 +1230,7 @@
       const item = e.target.closest('[data-pick]'); if (!item) return;
       const exId = item.dataset.pick;
       if (usedIds.has(exId)) { toast('すでに追加済みです'); return; }
-      if (multi) {
-        if (selected.has(exId)) selected.delete(exId); else selected.add(exId);
-      } else {
-        selected.clear(); selected.add(exId);
-      }
+      if (selected.has(exId)) selected.delete(exId); else selected.add(exId);
       buildList();
     });
 
@@ -1265,18 +1254,9 @@
         if (state.editingMenu) for (const exId of ids) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
         closeSheet(); renderMenuEdit();
         toast(`${ids.length}種目をメニューに追加`);
-      } else {
-        state.progExId = ids[0];
-        closeSheet(); renderProg();
       }
     });
   }
-
-  $('#progExSelect').addEventListener('click', () => openExercisePicker('select'));
-  $('#progBody').addEventListener('click', (e) => {
-    const m = e.target.closest('[data-metric]');
-    if (m) { state.progMetric = m.dataset.metric; renderProg(); }
-  });
 
   // ---------- 種目 追加/編集 ----------
   $('#addExBtn').addEventListener('click', () => openExEditSheet(null));
@@ -1357,6 +1337,10 @@
       <div class="grabber"></div>
       <h3>設定</h3>
       <div class="sub">記録 ${totalWorkouts} 日分 ・ ${totalSets} セット</div>
+      <div class="sect-label">休憩タイマー（セット記録後に自動開始）</div>
+      <div class="rest-pills" id="restPills">
+        ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
+      </div>
       <div class="set-group">
         <button class="set-item" id="btnExport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
@@ -1372,6 +1356,13 @@
       <input type="file" id="importFile" accept="application/json,.json" style="display:none">
     `;
     openSheet(sheet);
+    sheet.querySelector('#restPills').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-rest]'); if (!b) return;
+      state.restSec = parseInt(b.dataset.rest,10);
+      try { localStorage.setItem('tsumiage-rest', state.restSec); } catch (_) {}
+      sheet.querySelectorAll('#restPills button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rest,10)===state.restSec));
+      if (state.restSec === 0) stopRest(false);
+    });
     sheet.querySelector('#btnExport').addEventListener('click', exportData);
     sheet.querySelector('#btnImport').addEventListener('click', () => sheet.querySelector('#importFile').click());
     sheet.querySelector('#importFile').addEventListener('change', async (e) => {
@@ -1421,6 +1412,7 @@
   (async function init() {
     setupViewportTracking();
     try { const s = parseFloat(localStorage.getItem('tsumiage-wstep')); if (s > 0) state.weightStep = s; } catch (_) {}
+    try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
     loadPlan();
     await openDB();
