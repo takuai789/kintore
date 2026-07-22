@@ -275,11 +275,12 @@
   #restBar .rest-btn.skip { margin-left: 0; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); }
   #restFlash {
     position: fixed; inset: 0; z-index: 950; background: rgba(245,158,11,0.92);
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.35s; pointer-events: none;
+    display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.3s;
   }
   #restFlash.show { opacity: 1; }
   #restFlash .rest-flash-msg { font-size: 30px; font-weight: 700; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  #restFlash .rest-flash-sub { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
 
   /* 設定の休憩ピル */
   .rest-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -435,7 +436,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '2.3.1';
+  const APP_VERSION = '2.4.2';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -1104,12 +1105,78 @@
   }
 
   // ===================== レストタイマー =====================
+  // iOS対策: 「無音+アラーム音」の音声を先に再生しておくことで、
+  // アプリを閉じていても時間が来た瞬間に音で知らせる（PWAは予約通知ができないため）
+  let restAudio = null, restAudioUrl = null, audioReady = false;
+
+  function initAudio() {
+    if (restAudio) return;
+    restAudio = new Audio();
+    restAudio.preload = 'auto';
+    // 他アプリの音楽を止めないよう ambient を試し、不可なら既定のまま
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+  }
+  // 初回タップで再生権限を解除（iOSはユーザー操作が必要）
+  function unlockAudio() {
+    initAudio();
+    if (audioReady) return;
+    restAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+    const pr = restAudio.play();
+    if (pr && pr.then) pr.then(() => { audioReady = true; restAudio.pause(); }).catch(() => {});
+  }
+  document.addEventListener('touchend', unlockAudio, true);
+  document.addEventListener('click', unlockAudio, true);
+
+  // 無音(silenceSec) + ビープ のWAVを生成
+  function makeRestWav(silenceSec) {
+    const sr = 8000, beepSec = 2.1;
+    const total = Math.ceil((silenceSec + beepSec) * sr);
+    const bytes = 44 + total * 2;
+    const buf = new ArrayBuffer(bytes);
+    const v = new DataView(buf);
+    const ws = (o, s) => { for (let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+    ws(0,'RIFF'); v.setUint32(4, bytes-8, true); ws(8,'WAVE');
+    ws(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+    v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+    ws(36,'data'); v.setUint32(40, total*2, true);
+    const start = Math.floor(silenceSec * sr);
+    for (let i=start;i<total;i++){
+      const t = (i - start) / sr;
+      const slot = Math.floor(t / 0.5), inSlot = t - slot*0.5;
+      let s = 0;
+      if (slot < 4 && inSlot < 0.22) {
+        const env = Math.min(1, inSlot/0.01) * Math.min(1, (0.22-inSlot)/0.02);
+        s = Math.sin(2*Math.PI*880*t) * 0.85 * env;
+      }
+      v.setInt16(44 + i*2, Math.max(-1,Math.min(1,s)) * 32767, true);
+    }
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  function scheduleRestSound(sec) {
+    initAudio();
+    if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
+    try {
+      restAudioUrl = URL.createObjectURL(makeRestWav(sec));
+      restAudio.src = restAudioUrl;
+      restAudio.currentTime = 0;
+      const pr = restAudio.play();
+      if (pr && pr.catch) pr.catch(() => {});
+    } catch (_) {}
+  }
+  function cancelRestSound() {
+    if (!restAudio) return;
+    try { restAudio.pause(); restAudio.currentTime = 0; } catch (_) {}
+    if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
+  }
+
   let restTick = null;
   let restTotalMs = 0;
   function startRest() {
     if (!state.restSec) return; // 0=オフ
     restTotalMs = state.restSec * 1000;
     state.restEndAt = Date.now() + restTotalMs;
+    scheduleRestSound(state.restSec);
     ensureRestBar();
     if (restTick) clearInterval(restTick);
     restTick = setInterval(updateRestBar, 250);
@@ -1118,6 +1185,7 @@
   function stopRest(finished) {
     state.restEndAt = 0;
     if (restTick) { clearInterval(restTick); restTick = null; }
+    if (!finished) cancelRestSound(); // スキップ時は予約音も停止
     const bar = $('#restBar');
     if (bar) { bar.classList.remove('show'); setTimeout(() => bar.remove(), 300); }
     if (finished) restFinishEffect();
@@ -1126,6 +1194,8 @@
     if (!state.restEndAt) return;
     state.restEndAt += sec * 1000;
     restTotalMs += sec * 1000;
+    const remainSec = Math.max(0, (state.restEndAt - Date.now()) / 1000);
+    scheduleRestSound(remainSec); // 予約音を鳴り直し
     updateRestBar();
   }
   function ensureRestBar() {
@@ -1160,12 +1230,22 @@
   }
   function restFinishEffect() {
     try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (_) {}
+    const old = $('#restFlash'); if (old) old.remove();
     const flash = document.createElement('div');
     flash.id = 'restFlash';
-    flash.innerHTML = `<div class="rest-flash-msg">💪 休憩おわり！</div>`;
+    flash.innerHTML = `<div class="rest-flash-msg">💪 休憩おわり！</div><div class="rest-flash-sub">タップして閉じる</div>`;
     document.body.appendChild(flash);
     requestAnimationFrame(() => flash.classList.add('show'));
-    setTimeout(() => { flash.classList.remove('show'); setTimeout(() => flash.remove(), 400); }, 1600);
+    let closed = false;
+    const close = () => {
+      if (closed) return; closed = true;
+      clearTimeout(autoClose);
+      flash.classList.remove('show');   // 透明になってもタップは受け止めたまま
+      setTimeout(() => flash.remove(), 320); // 消え際の誤タップを防ぐ
+    };
+    // フラッシュ自身がタップを受け止めるので、下のボタンを誤爆しない
+    flash.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); close(); });
+    const autoClose = setTimeout(close, 2500);
   }
   // バックグラウンドから戻ったとき、経過を反映（iOSはinterval停止するため）
   document.addEventListener('visibilitychange', () => {
@@ -1341,6 +1421,7 @@
       <div class="rest-pills" id="restPills">
         ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
       </div>
+      <div class="set-note">時間になるとアラーム音が鳴ります。画面を消していても、他のアプリを見ていても鳴ります（アプリをスワイプで終了した場合は鳴りません）。</div>
       <div class="set-group">
         <button class="set-item" id="btnExport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
