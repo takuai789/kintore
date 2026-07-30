@@ -83,10 +83,10 @@
 
   /* ---- exercise card (record) ---- */
   .ex-card { background: #fff; border-radius: 16px; padding: 12px 14px 6px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-  .ex-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .ex-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
   .ex-name { font-size: 16px; font-weight: 700; color: var(--navy); }
   .ex-cat { font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 6px; }
-  .ex-del { margin-left: auto; color: var(--tertiary); width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; }
+  .ex-del { color: var(--tertiary); width: 44px; height: 44px; margin-right: -10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
   .set-row { display: flex; align-items: center; gap: 10px; padding: 13px 2px; min-height: 48px; border-top: 1px solid var(--sep); }
   .set-no { width: 26px; height: 26px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
@@ -108,6 +108,32 @@
   .tab svg { width: 24px; height: 24px; }
 
   .sect-label { font-size: 12px; font-weight: 700; color: var(--secondary); margin: 4px 2px 8px; }
+
+  /* 折りたたみ・並べ替え・達成 */
+  .ex-head { cursor: pointer; }
+  .fold-ic { color: var(--tertiary); font-size: 13px; width: 14px; flex-shrink: 0; }
+  .ex-sp { margin-left: auto; }
+  .ord-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--navy); font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .ord-btn:disabled { color: var(--tertiary); opacity: 0.35; }
+  .fold-summary { padding: 8px 2px 10px; font-size: 13px; color: var(--secondary); font-weight: 600; }
+  .ex-card.done { box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 0 0 2px rgba(22,163,74,0.35); }
+  .done-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--green); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+  .ex-target.ok { color: var(--green); background: rgba(22,163,74,0.1); }
+  .rpe-add { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--tertiary); border: 1px dashed var(--sep); padding: 4px 9px; border-radius: 7px; flex-shrink: 0; }
+
+  /* 予定ボックス（メニュータブ内） */
+  .plan-box { background: rgba(255,255,255,0.5); border-radius: 14px; padding: 2px 0 0; }
+  .menu-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .menu-btns .menu-go { flex: 1; margin-top: 0; }
+  .menu-plan { flex-shrink: 0; padding: 12px 16px; border-radius: 12px; background: var(--navy-soft); color: var(--navy); font-size: 14px; font-weight: 700; }
+  .menu-plan:disabled { opacity: 0.4; }
+
+  /* 最近使った重量 */
+  .step-pills.recent-w { margin-top: -6px; }
+  .step-pills.recent-w button { background: var(--navy-soft); color: var(--navy); border-color: transparent; }
+
+  /* バックアップ促し */
+  .backup-warn { background: var(--amber-soft); color: #92400e; border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 16px; }
 
   /* ---- plan ---- */
   .plan-li { background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
@@ -256,8 +282,12 @@
   .ver { text-align: center; font-size: 12px; color: var(--tertiary); padding: 6px; }
 
   /* toast */
-  #toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 90px); transform: translate(-50%, 20px); background: rgba(30,58,95,0.96); color: #fff; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 900; opacity: 0; transition: all 0.3s; pointer-events: none; }
+  #toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 90px); transform: translate(-50%, 20px); background: rgba(30,58,95,0.96); color: #fff; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 900; opacity: 0; transition: all 0.3s; pointer-events: none; max-width: calc(100vw - 32px); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #toast.with-action { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; pointer-events: auto; }
+  #toast .tmsg { flex: 1; }
+  #toast .tundo { padding: 10px 14px; min-height: 40px; border-radius: 9px; background: rgba(255,255,255,0.18); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  #toast .tundo:active { background: rgba(255,255,255,0.3); }
 
   /* ---- rest timer ---- */
   #restBar {
@@ -335,15 +365,6 @@
     <div class="scroll" id="exBody"></div>
   </div>
 
-  <!-- ===== 予定 ===== -->
-  <div id="planView" class="view">
-    <div class="navbar">
-      <div class="nav-side"></div>
-      <span class="title">次回の予定</span>
-      <div class="nav-side right"></div>
-    </div>
-    <div class="scroll" id="planBody"></div>
-  </div>
 
   <!-- ===== メニュー ===== -->
   <div id="menuView" class="view">
@@ -370,10 +391,6 @@
     <button class="tab active" data-tab="rec">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       <span>記録</span>
-    </button>
-    <button class="tab" data-tab="plan">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Z"/><path d="M9 4h6"/><path d="m9 14 2 2 4-4"/></svg>
-      <span>予定</span>
     </button>
     <button class="tab" data-tab="menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"/><path d="m4 7 8 4.5L20 7"/><path d="M12 20v-8.5"/></svg>
@@ -410,8 +427,26 @@
   function shiftDay(s, n) { const d = parseYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
 
   function toast(msg) {
-    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    const t = $('#toast');
+    t.classList.remove('with-action');
+    t.textContent = msg; t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+  // 取り消しボタン付きトースト
+  function toastUndo(msg, onUndo) {
+    const t = $('#toast');
+    t.classList.add('with-action');
+    t.innerHTML = `<span class="tmsg"></span><button class="tundo">取り消す</button>`;
+    t.querySelector('.tmsg').textContent = msg;
+    t.classList.add('show');
+    const btn = t.querySelector('.tundo');
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      clearTimeout(t._t);
+      t.classList.remove('show');
+      await onUndo();
+    });
+    clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 4000);
   }
 
   // ---------- IndexedDB ----------
@@ -436,7 +471,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '2.4.2';
+  const APP_VERSION = '3.0.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -461,13 +496,38 @@
     restSec: 90,       // レストタイマー秒数（端末に記憶・0でオフ）
     restEndAt: 0,      // 実行中タイマーの終了時刻(ms)。0=停止
     plan: [],          // 次回の予定（種目IDの配列・端末に記憶）
-    menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps}],order,...}
+    menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
+    keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
+    collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
+    lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
 
   function savePlan() {
     try { localStorage.setItem('tsumiage-plan', JSON.stringify(state.plan)); } catch (_) {}
   }
+
+  // ---------- 画面を消させない（Wake Lock） ----------
+  let wakeLock = null;
+  async function acquireWakeLock() {
+    if (!state.keepAwake || !('wakeLock' in navigator)) return;
+    if (wakeLock) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } catch (_) { wakeLock = null; }
+  }
+  async function releaseWakeLock() {
+    if (!wakeLock) return;
+    try { await wakeLock.release(); } catch (_) {}
+    wakeLock = null;
+  }
+  // 記録タブにいる間だけ有効。復帰時は取り直す（iOSは自動解除されるため）
+  function syncWakeLock() {
+    if (state.keepAwake && state.tab === 'rec' && document.visibilityState === 'visible') acquireWakeLock();
+    else releaseWakeLock();
+  }
+  document.addEventListener('visibilitychange', syncWakeLock);
   function loadPlan() {
     try { const p = JSON.parse(localStorage.getItem('tsumiage-plan')); if (Array.isArray(p)) state.plan = p; } catch (_) {}
   }
@@ -543,6 +603,22 @@
 
 
   // 前回値プレフィル: 指定種目の、beforeDateより前の最新ワークアウトの、setIndex番目（無ければ最後）のセット
+  // その種目で最近使った重量（新しい順・重複なし・最大4件）
+  function recentWeights(exId, limit=4) {
+    const out = [];
+    const days = state.workouts.slice().sort((a,b)=> a.id < b.id ? 1 : -1);
+    for (const w of days) {
+      const en = w.entries.find(x => x.exerciseId === exId);
+      if (!en) continue;
+      for (let i = en.sets.length - 1; i >= 0; i--) {
+        const v = en.sets[i].w;
+        if (v > 0 && !out.includes(v)) out.push(v);
+        if (out.length >= limit) return out;
+      }
+    }
+    return out;
+  }
+
   function prevSetFor(exId, beforeDate, setIndex) {
     const past = state.workouts
       .filter(w => w.id < beforeDate)
@@ -568,24 +644,39 @@
     const body = $('#recBody');
     let html = '';
     if (w && w.entries.length) {
+      const total = w.entries.length;
       w.entries.forEach((en, ei) => {
         const ex = exById(en.exerciseId);
         if (!ex) return;
         const tgt = en.target;
-        html += `<div class="ex-card">
-          <div class="ex-head">
+        const done = tgt && en.sets.length >= tgt.sets;      // 目標達成
+        const folded = !!state.collapsed[en.exerciseId];
+        const summary = en.sets.length
+          ? `${en.sets.length}セット・${en.sets.map(s=>s.r).join('/')}回`
+          : 'まだ記録なし';
+        html += `<div class="ex-card ${done?'done':''} ${folded?'folded':''}">
+          <div class="ex-head" data-toggle="${en.exerciseId}">
+            <span class="fold-ic">${folded?'▸':'▾'}</span>
             <span class="ex-name">${esc(ex.name)}</span>
             <span class="ex-cat">${ex.category}</span>
+            ${done?'<span class="done-badge">達成</span>':''}
+            <span class="ex-sp"></span>
+            <button class="ord-btn" data-moveex="${ei}:-1" ${ei===0?'disabled':''} aria-label="上へ">▲</button>
+            <button class="ord-btn" data-moveex="${ei}:1" ${ei===total-1?'disabled':''} aria-label="下へ">▼</button>
             <button class="ex-del" data-delex="${ei}" aria-label="種目を削除">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
             </button>
-          </div>
-          ${tgt ? `<div class="ex-target">🎯 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>` : ''}`;
+          </div>`;
+        if (folded) {
+          html += `<div class="fold-summary" data-toggle="${en.exerciseId}">${summary}</div></div>`;
+          return;
+        }
+        html += `${tgt ? `<div class="ex-target ${done?'ok':''}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>` : ''}`;
         en.sets.forEach((s, si) => {
           html += `<div class="set-row" data-editset="${ei}:${si}">
             <span class="set-no">${si+1}</span>
             <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
-            ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : ''}
+            ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : `<button class="rpe-add" data-rpeadd="${ei}:${si}">RPE＋</button>`}
           </div>`;
         });
         const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date, 0);
@@ -627,40 +718,7 @@
 
   // ---------- 共通 render ----------
   function renderAll() {
-    renderRec(); renderEx(); renderPlan(); renderMenu();
-  }
-
-  // ---------- render: 次回の予定 ----------
-  function renderPlan() {
-    const body = $('#planBody');
-    // 無効な種目ID（削除済み）を除外
-    state.plan = state.plan.filter(id => exById(id));
-    let html = '';
-    if (state.plan.length) {
-      html += `<div class="sect-label" style="margin-top:8px;">予定の種目（${state.plan.length}）</div>`;
-      state.plan.forEach((id, i) => {
-        const ex = exById(id);
-        html += `<div class="plan-li">
-          <span class="num">${i+1}</span>
-          <span class="nm">${esc(ex.name)}</span>
-          <span class="cat">${ex.category}</span>
-          <button class="rm" data-planrm="${id}" aria-label="外す">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </div>`;
-      });
-      html += `<button class="plan-start" id="planStart">この予定で今日の記録を始める</button>`;
-      html += `<div class="plan-actions">
-        <button data-planact="import">直近メニューから入れ替え</button>
-        <button data-planact="add">種目を追加</button>
-        <button data-planact="clear" class="danger">予定をクリア</button>
-      </div>`;
-    } else {
-      html += `<div class="empty"><span class="em">📋</span>次にジムでやるメニューを決めておけます。<br>直近のトレからまるごと取り込むのが楽です。</div>`;
-      html += `<button class="add-ex" data-planact="import" style="margin-top:0;">直近メニューから取り込む</button>`;
-      html += `<button class="plan-sub-btn" data-planact="add">種目を1つずつ追加</button>`;
-    }
-    body.innerHTML = html;
+    renderRec(); renderEx(); renderMenu();
   }
 
   // 実績のある直近ワークアウト（新しい順）
@@ -671,25 +729,6 @@
       .sort((a,b) => a.id < b.id ? 1 : -1)
       .slice(0, n);
   }
-
-  // 予定の操作（イベント委任）
-  $('#planBody').addEventListener('click', async (e) => {
-    const rm = e.target.closest('[data-planrm]');
-    if (rm) {
-      const ex = exById(rm.dataset.planrm);
-      if (!confirm(`「${ex ? ex.name : '種目'}」を予定から外しますか？`)) return;
-      state.plan = state.plan.filter(id => id !== rm.dataset.planrm); savePlan(); renderPlan(); return;
-    }
-    const start = e.target.closest('#planStart');
-    if (start) { await startPlanToday(); return; }
-    const act = e.target.closest('[data-planact]');
-    if (act) {
-      const a = act.dataset.planact;
-      if (a === 'import') openPlanImport();
-      else if (a === 'add') openExercisePicker('plan');
-      else if (a === 'clear') { if (confirm('予定をクリアしますか？')) { state.plan = []; savePlan(); renderPlan(); } }
-    }
-  });
 
   // 直近メニューから取り込み（置き換え）
   function openPlanImport() {
@@ -718,7 +757,7 @@
       const ids = [];
       for (const en of w.entries) { if (en.sets.length && exById(en.exerciseId) && !ids.includes(en.exerciseId)) ids.push(en.exerciseId); }
       state.plan = ids; savePlan();
-      closeSheet(); renderPlan();
+      closeSheet(); renderMenu();
       toast('予定に取り込みました');
     });
   }
@@ -742,36 +781,97 @@
   const menuById = (id) => state.menus.find(m => m.id === id);
   function sortedMenus() { return state.menus.slice().sort((a,b) => (a.order||0) - (b.order||0)); }
 
-  // ---------- render: メニュー一覧 ----------
+  // ---------- render: メニュー一覧（＋次回の予定） ----------
   function renderMenu() {
     const body = $('#menuBody');
     const menus = sortedMenus();
-    if (!menus.length) {
-      body.innerHTML = `<div class="empty"><span class="em">📑</span>トレーナー指定のメニューなどを<br>名前を付けて保存できます。<br>右上の「＋作成」から作ってください。</div>`;
-      return;
-    }
     let html = '';
-    for (const m of menus) {
-      const items = (m.items||[]).filter(it => exById(it.exerciseId));
-      const summary = items.map(it => `${esc(exById(it.exerciseId).name)} ${it.weight?fmtNum(it.weight)+"kg ":""}${it.reps}回×${it.sets}s`).join('　/　');
-      html += `<div class="menu-card">
-        <div class="menu-card-h">
-          <span class="menu-name">${esc(m.name)}</span>
-          <button class="menu-edit" data-menuedit="${m.id}" aria-label="編集">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+
+    // --- 次回の予定（あるときだけ表示） ---
+    state.plan = state.plan.filter(id => exById(id));
+    if (state.plan.length) {
+      html += `<div class="sect-label" style="margin-top:8px;">次回の予定（${state.plan.length}種目）</div>`;
+      html += `<div class="plan-box">`;
+      state.plan.forEach((id, i) => {
+        const ex = exById(id);
+        html += `<div class="plan-li">
+          <span class="num">${i+1}</span>
+          <span class="nm">${esc(ex.name)}</span>
+          <span class="cat">${ex.category}</span>
+          <button class="rm" data-planrm="${id}" aria-label="外す">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
+        </div>`;
+      });
+      html += `<button class="plan-start" id="planStart">この予定で今日の記録を始める</button>
+        <div class="plan-actions">
+          <button data-planact="add">種目を追加</button>
+          <button data-planact="clear" class="danger">予定をクリア</button>
         </div>
-        ${m.note ? `<div class="menu-note">${esc(m.note)}</div>` : ''}
-        <div class="menu-summary">${summary || '（種目なし）'}</div>
-        <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>このメニューで今日の記録を始める</button>
       </div>`;
+    }
+
+    // --- マイメニュー ---
+    html += `<div class="sect-label" style="margin-top:${state.plan.length?'20px':'8px'};">マイメニュー</div>`;
+    if (!menus.length) {
+      html += `<div class="empty" style="padding:24px 12px;"><span class="em">📑</span>トレーナー指定のメニューなどを<br>名前を付けて保存できます。<br>右上の「＋作成」から作ってください。</div>`;
+    } else {
+      for (const m of menus) {
+        const items = (m.items||[]).filter(it => exById(it.exerciseId));
+        const summary = items.map(it => `${esc(exById(it.exerciseId).name)} ${it.weight?fmtNum(it.weight)+"kg ":""}${it.reps}回×${it.sets}s`).join('　/　');
+        html += `<div class="menu-card">
+          <div class="menu-card-h">
+            <span class="menu-name">${esc(m.name)}</span>
+            <button class="menu-edit" data-menuedit="${m.id}" aria-label="編集">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+            </button>
+          </div>
+          ${m.note ? `<div class="menu-note">${esc(m.note)}</div>` : ''}
+          <div class="menu-summary">${summary || '（種目なし）'}</div>
+          <div class="menu-btns">
+            <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>今日の記録を始める</button>
+            <button class="menu-plan" data-menuplan="${m.id}" ${items.length?'':'disabled'}>予定に</button>
+          </div>
+        </div>`;
+      }
+    }
+
+    // --- 直近の実績から予定を作る ---
+    if (!state.plan.length) {
+      html += `<button class="plan-sub-btn" data-planact="import">直近のトレから予定を作る</button>`;
     }
     body.innerHTML = html;
   }
 
   $('#menuBody').addEventListener('click', async (e) => {
+    // 予定まわり
+    const rm = e.target.closest('[data-planrm]');
+    if (rm) {
+      const ex = exById(rm.dataset.planrm);
+      if (!confirm(`「${ex ? ex.name : '種目'}」を予定から外しますか？`)) return;
+      state.plan = state.plan.filter(id => id !== rm.dataset.planrm); savePlan(); renderMenu(); return;
+    }
+    const start = e.target.closest('#planStart');
+    if (start) { await startPlanToday(); return; }
+    const act = e.target.closest('[data-planact]');
+    if (act) {
+      const a = act.dataset.planact;
+      if (a === 'import') openPlanImport();
+      else if (a === 'add') openExercisePicker('plan');
+      else if (a === 'clear') { if (confirm('予定をクリアしますか？')) { state.plan = []; savePlan(); renderMenu(); } }
+      return;
+    }
+    // メニューまわり
     const go = e.target.closest('[data-menugo]');
     if (go) { await applyMenuToday(go.dataset.menugo); return; }
+    const toPlan = e.target.closest('[data-menuplan]');
+    if (toPlan) {
+      const m = menuById(toPlan.dataset.menuplan); if (!m) return;
+      state.plan = (m.items||[]).map(it => it.exerciseId).filter(id => exById(id));
+      savePlan(); renderMenu();
+      toast(`「${m.name}」を次回の予定にしました`);
+      return;
+    }
     const ed = e.target.closest('[data-menuedit]');
     if (ed) { openMenuEdit(ed.dataset.menuedit); return; }
   });
@@ -803,7 +903,6 @@
     $('#menuEditTitle').textContent = src ? 'メニュー編集' : 'メニュー作成';
     // 編集画面を表示（タブのactiveはメニューのまま）
     $('#recView').classList.remove('active');
-    $('#planView').classList.remove('active');
     $('#menuView').classList.remove('active');
     $('#exView').classList.remove('active');
     $('#menuEditView').classList.add('active');
@@ -930,12 +1029,11 @@
     state.tab = tab;
     $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     $('#recView').classList.toggle('active', tab==='rec');
-    $('#planView').classList.toggle('active', tab==='plan');
     $('#menuView').classList.toggle('active', tab==='menu');
     $('#exView').classList.toggle('active', tab==='ex');
     $('#menuEditView').classList.remove('active'); // タブ切替で編集画面は閉じる
-    if (tab==='plan') renderPlan();
     if (tab==='menu') renderMenu();
+    syncWakeLock();
   }
   $$('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
@@ -948,6 +1046,10 @@
   $('#recBody').addEventListener('click', (e) => {
     const addEx = e.target.closest('#addExToDay');
     if (addEx) { openExercisePicker(); return; }
+    const mv = e.target.closest('[data-moveex]');
+    if (mv) { const [i,d] = mv.dataset.moveex.split(':').map(Number); moveEntry(i, d); return; }
+    const rpeAdd = e.target.closest('[data-rpeadd]');
+    if (rpeAdd) { const [ei,si] = rpeAdd.dataset.rpeadd.split(':').map(Number); openRpeSheet(ei, si); return; }
     const rep = e.target.closest('[data-repeatset]');
     if (rep) { repeatLastSet(parseInt(rep.dataset.repeatset,10)); return; }
     const addSet = e.target.closest('[data-addset]');
@@ -956,7 +1058,53 @@
     if (editSet) { const [ei,si] = editSet.dataset.editset.split(':').map(Number); openSetSheet(ei, si); return; }
     const delEx = e.target.closest('[data-delex]');
     if (delEx) { confirmDelEntry(parseInt(delEx.dataset.delex,10)); return; }
+    const tg = e.target.closest('[data-toggle]');
+    if (tg) { const id = tg.dataset.toggle; state.collapsed[id] = !state.collapsed[id]; renderRec(); return; }
   });
+
+  // 種目カードの並べ替え
+  async function moveEntry(i, d) {
+    const w = workoutByDate(state.recDate); if (!w) return;
+    const j = i + d;
+    if (j < 0 || j >= w.entries.length) return;
+    [w.entries[i], w.entries[j]] = [w.entries[j], w.entries[i]];
+    await saveWorkout(w);
+    renderRec();
+  }
+
+  // 記録済みセットにRPEを後から付ける
+  function openRpeSheet(ei, si) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const entry = w.entries[ei];
+    const s = entry.sets[si]; if (!s) return;
+    const ex = exById(entry.exerciseId);
+    let val = s.rpe || null;
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <div class="grabber"></div>
+      <h3>${esc(ex.name)}・${si+1}セット目</h3>
+      <div class="sub">${s.r}回 × ${fmtNum(s.w)}kg のきつさ</div>
+      <div class="rpe-box">
+        <div class="lbl">RPE<span class="opt">6=余裕 … 10=限界</span></div>
+        <div class="rpe-scale" id="rpeOnly">
+          ${[6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${val===n?'on':''}">${n}</button>`).join('')}
+        </div>
+      </div>
+      <button class="sheet-save" id="rpeSave">保存する</button>`;
+    openSheet(sheet);
+    sheet.querySelector('#rpeOnly').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-rpe]'); if (!b) return;
+      const n = parseInt(b.dataset.rpe,10);
+      val = (val === n) ? null : n;
+      sheet.querySelectorAll('#rpeOnly button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rpe,10)===val));
+    });
+    sheet.querySelector('#rpeSave').addEventListener('click', async () => {
+      s.rpe = val;
+      await saveWorkout(w);
+      closeSheet(); renderRec();
+    });
+  }
 
   // 直前セットと同じ内容でもう1セット記録
   async function repeatLastSet(ei) {
@@ -966,8 +1114,19 @@
     entry.sets.push({ w: last.w, r: last.r, rpe: last.rpe || null });
     await saveWorkout(w);
     renderRec();
-    toast(`${entry.sets.length}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`);
+    const setNo = entry.sets.length;
     if (state.recDate === todayStr()) startRest();
+    toastUndo(`${setNo}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`, async () => {
+      const w2 = workoutByDate(state.recDate); if (!w2) return;
+      const en2 = w2.entries.find(x => x.exerciseId === entry.exerciseId);
+      if (!en2 || en2.sets.length !== setNo) return; // その後に操作があれば何もしない
+      en2.sets.pop();
+      if (!en2.sets.length) w2.entries = w2.entries.filter(x => x !== en2);
+      await saveWorkout(w2);
+      stopRest(false); // 走り出したタイマーと予約音も止める
+      renderRec();
+      toast('取り消しました');
+    });
   }
 
   async function confirmDelEntry(ei) {
@@ -1010,18 +1169,26 @@
     const isNew = (si === null);
     const setIndex = isNew ? entry.sets.length : si;
 
-    // 初期値: 既存編集ならその値、新規なら「今日の直前セット」→前回値→デフォルトの順
+    // 初期値: 既存編集ならその値。新規は「今日の直前セット」→メニューの目標→前回値→既定
     let init;
     if (!isNew) init = { ...entry.sets[si] };
     else {
       const last = entry.sets[entry.sets.length-1];
-      const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
-      init = last ? { w: last.w, r: last.r, rpe: null } : (pv ? { w: pv.w, r: pv.r, rpe: null } : { w: 20, r: 3, rpe: null });
+      const tgt = entry.target;
+      const pv0 = prevSetFor(entry.exerciseId, state.recDate, setIndex);
+      if (last) init = { w: last.w, r: last.r, rpe: null };
+      else if (tgt && (tgt.weight || tgt.reps)) init = { w: tgt.weight || (pv0 ? pv0.w : 20), r: tgt.reps || 3, rpe: null };
+      else if (pv0) init = { w: pv0.w, r: pv0.r, rpe: null };
+      else init = { w: 20, r: 3, rpe: null };
     }
     let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
 
     const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
-    const subText = pv ? `前回のトレ: ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録';
+    const tgt = entry.target;
+    const subText = (tgt && (tgt.weight || tgt.reps))
+      ? `🎯 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回`
+      : (pv ? `前回のトレ: ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録');
+    const recentW = recentWeights(entry.exerciseId);
 
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
@@ -1048,6 +1215,10 @@
         <span class="sp-lbl">刻み</span>
         ${WEIGHT_STEPS.map(s=>`<button data-step="${s}" class="${s===state.weightStep?'on':''}">${fmtNum(s)}kg</button>`).join('')}
       </div>
+      ${recentW.length ? `<div class="step-pills recent-w" id="wRecent">
+        <span class="sp-lbl">最近</span>
+        ${recentW.map(v=>`<button data-wset="${v}">${fmtNum(v)}kg</button>`).join('')}
+      </div>` : ''}
       <div class="rpe-box">
         <div class="lbl">RPE<span class="opt">任意・きつさの主観（6〜10）</span></div>
         <div class="rpe-scale" id="rpeScale">
@@ -1074,6 +1245,11 @@
       try { localStorage.setItem('tsumiage-wstep', state.weightStep); } catch (_) {}
       sheet.querySelectorAll('#wStepPills button').forEach(x => x.classList.toggle('on', parseFloat(x.dataset.step)===state.weightStep));
     });
+    const recentEl = sheet.querySelector('#wRecent');
+    if (recentEl) recentEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-wset]'); if (!b) return;
+      inW.value = fmtNum(parseFloat(b.dataset.wset));
+    });
     sheet.querySelector('#repScale').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-rep]'); if (!btn) return;
       cur.r = parseInt(btn.dataset.rep,10);
@@ -1097,6 +1273,12 @@
       if (isNew && state.recDate === todayStr()) startRest(); // 今日の新規セットのみタイマー開始
     });
     if (!isNew) sheet.querySelector('#setDel').addEventListener('click', async () => {
+      const s = entry.sets[si];
+      const lastOne = entry.sets.length === 1;
+      const msg = lastOne
+        ? `${si+1}セット目（${s.r}回 × ${fmtNum(s.w)}kg）を削除しますか？\n最後のセットなので「${ex.name}」も記録から外れます。`
+        : `${si+1}セット目（${s.r}回 × ${fmtNum(s.w)}kg）を削除しますか？`;
+      if (!confirm(msg)) return;
       entry.sets.splice(si, 1);
       if (!entry.sets.length) w.entries.splice(ei, 1); // セット0なら種目ごと外す
       await saveWorkout(w);
@@ -1328,7 +1510,7 @@
       } else if (mode==='plan') {
         for (const exId of ids) if (!state.plan.includes(exId)) state.plan.push(exId);
         savePlan();
-        closeSheet(); renderPlan();
+        closeSheet(); renderMenu();
         toast(`${ids.length}種目を予定に追加`);
       } else if (mode==='menu') {
         if (state.editingMenu) for (const exId of ids) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
@@ -1411,6 +1593,11 @@
   function openSettings() {
     const totalWorkouts = state.workouts.length;
     const totalSets = state.workouts.reduce((t,w)=> t + w.entries.reduce((a,e)=>a+e.sets.length,0), 0);
+    // 30日以上書き出していない & 記録が貯まっているなら促す
+    const days = state.lastExport ? Math.floor((Date.now()-state.lastExport)/86400000) : null;
+    const backupNote = (totalWorkouts >= 3 && (days === null || days >= 30))
+      ? `<div class="backup-warn">💾 ${days === null ? 'まだ一度もバックアップしていません' : `前回のバックアップから${days}日経過`}。下の「データを書き出す」で保存できます。</div>`
+      : '';
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.innerHTML = `
@@ -1422,6 +1609,13 @@
         ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
       </div>
       <div class="set-note">時間になるとアラーム音が鳴ります。画面を消していても、他のアプリを見ていても鳴ります（アプリをスワイプで終了した場合は鳴りません）。</div>
+      <div class="sect-label">記録中の画面</div>
+      <div class="rest-pills" id="awakePills">
+        <button data-awake="1" class="${state.keepAwake?'on':''}">スリープしない</button>
+        <button data-awake="0" class="${state.keepAwake?'':'on'}">通常どおり</button>
+      </div>
+      <div class="set-note">記録タブを開いている間、画面が自動で暗くならないようにします。ジムでの誤タップ防止に。</div>
+      ${backupNote}
       <div class="set-group">
         <button class="set-item" id="btnExport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
@@ -1444,6 +1638,14 @@
       sheet.querySelectorAll('#restPills button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rest,10)===state.restSec));
       if (state.restSec === 0) stopRest(false);
     });
+    const awakeEl = sheet.querySelector('#awakePills');
+    if (awakeEl) awakeEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-awake]'); if (!b) return;
+      state.keepAwake = (b.dataset.awake === '1');
+      try { localStorage.setItem('tsumiage-awake', state.keepAwake ? '1' : '0'); } catch (_) {}
+      awakeEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.awake==='1')===state.keepAwake));
+      syncWakeLock();
+    });
     sheet.querySelector('#btnExport').addEventListener('click', exportData);
     sheet.querySelector('#btnImport').addEventListener('click', () => sheet.querySelector('#importFile').click());
     sheet.querySelector('#importFile').addEventListener('change', async (e) => {
@@ -1463,6 +1665,8 @@
     a.href = url; a.download = `muscle-${todayStr()}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    state.lastExport = Date.now();
+    try { localStorage.setItem('tsumiage-lastexport', state.lastExport); } catch (_) {}
     toast('書き出しました');
   }
   async function importData(file) {
@@ -1494,12 +1698,15 @@
     setupViewportTracking();
     try { const s = parseFloat(localStorage.getItem('tsumiage-wstep')); if (s > 0) state.weightStep = s; } catch (_) {}
     try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
+    try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
+    try { const le = parseInt(localStorage.getItem('tsumiage-lastexport'),10); if (!isNaN(le)) state.lastExport = le; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
     loadPlan();
     await openDB();
     await loadAll();
     await seedIfEmpty();
     renderAll();
+    syncWakeLock();
   })();
 
   // ---------- visualViewport ----------
