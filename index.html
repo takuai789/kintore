@@ -487,7 +487,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.1.0';
+  const APP_VERSION = '3.3.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -510,6 +510,7 @@
     recDate: todayStr(),
     weightStep: 2.5,   // 重量の増減刻み（端末に記憶）
     restSec: 90,       // レストタイマー秒数（端末に記憶・0でオフ）
+    restSound: 'beep', // 鳴らす音の種類（端末に記憶）
     restEndAt: 0,      // 実行中タイマーの終了時刻(ms)。0=停止
     plan: [],          // 次回の予定（種目IDの配列・端末に記憶）
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
@@ -649,15 +650,14 @@
     return out;
   }
 
-  function prevSetFor(exId, beforeDate, setIndex) {
+  // 前回その種目をやった日の「最後のセット」を返す
+  function prevSetFor(exId, beforeDate) {
     const past = state.workouts
       .filter(w => w.id < beforeDate)
       .sort((a,b) => b.id < a.id ? -1 : 1);
     for (const w of past) {
       const e = w.entries.find(en => en.exerciseId === exId);
-      if (e && e.sets.length) {
-        return e.sets[Math.min(setIndex, e.sets.length-1)];
-      }
+      if (e && e.sets.length) return e.sets[e.sets.length - 1];
     }
     return null;
   }
@@ -709,7 +709,7 @@
             ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : `<button class="rpe-add" data-rpeadd="${ei}:${si}">RPE＋</button>`}
           </div>`;
         });
-        const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date, 0);
+        const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date);
         const hint = pv ? ` <span class="hint">前回 ${pv.r}回 × ${fmtNum(pv.w)}kg</span>` : '';
         const last = en.sets[en.sets.length-1];
         html += `<div class="add-row">
@@ -1227,7 +1227,7 @@
     else {
       const last = entry.sets[entry.sets.length-1];
       const tgt = entry.target;
-      const pv0 = prevSetFor(entry.exerciseId, state.recDate, setIndex);
+      const pv0 = prevSetFor(entry.exerciseId, state.recDate);
       if (last) init = { w: last.w, r: last.r, rpe: null };
       else if (tgt && (tgt.weight || tgt.reps)) init = { w: tgt.weight || (pv0 ? pv0.w : 20), r: tgt.reps || 3, rpe: null };
       else if (pv0) init = { w: pv0.w, r: pv0.r, rpe: null };
@@ -1235,7 +1235,7 @@
     }
     let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
 
-    const pv = prevSetFor(entry.exerciseId, state.recDate, setIndex);
+    const pv = prevSetFor(entry.exerciseId, state.recDate);
     const tgt = entry.target;
     const subText = (tgt && (tgt.weight || tgt.reps))
       ? `🎯 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回`
@@ -1367,8 +1367,52 @@
   document.addEventListener('click', unlockAudio, true);
 
   // 無音(silenceSec) + ビープ のWAVを生成
-  function makeRestWav(silenceSec) {
-    const sr = 8000, beepSec = 2.1;
+  // 鳴らせる音の種類（波形は数式で生成）
+  const REST_SOUNDS = [
+    { id: 'beep',  label: 'ピピッ',   sec: 2.1 },
+    { id: 'chime', label: 'ピンポン', sec: 2.4 },
+    { id: 'bell',  label: 'ベル',     sec: 2.6 },
+    { id: 'buzz',  label: 'ブザー',   sec: 2.2 },
+  ];
+  const soundDef = (id) => REST_SOUNDS.find(s => s.id === id) || REST_SOUNDS[0];
+
+  // 種類ごとの波形（t = 鳴り始めからの秒数, 戻り値 -1〜1）
+  function soundSample(type, t) {
+    if (type === 'chime') {
+      // ピンポン: 2回。1打ごとに高→低の2音
+      const hit = Math.floor(t / 1.2), dt = t - hit*1.2;
+      if (hit >= 2 || dt >= 1.0) return 0;
+      const freq = dt < 0.42 ? 988 : 740;
+      const local = dt < 0.42 ? dt : dt - 0.42;
+      const env = Math.min(1, local/0.008) * Math.exp(-3.2 * local);
+      return Math.sin(2*Math.PI*freq*t) * 0.85 * env;
+    }
+    if (type === 'bell') {
+      // ベル: 倍音つきで余韻を残す
+      const hit = Math.floor(t / 1.3), dt = t - hit*1.3;
+      if (hit >= 2 || dt >= 1.25) return 0;
+      const env = Math.min(1, dt/0.005) * Math.exp(-3.0 * dt);
+      const base = Math.sin(2*Math.PI*1318*t);
+      const over = Math.sin(2*Math.PI*2637*t) * 0.35;
+      return (base + over) * 0.6 * env;
+    }
+    if (type === 'buzz') {
+      // ブザー: 低めの矩形波を3回
+      const slot = Math.floor(t / 0.7), inSlot = t - slot*0.7;
+      if (slot >= 3 || inSlot >= 0.35) return 0;
+      const env = Math.min(1, inSlot/0.01) * Math.min(1, (0.35-inSlot)/0.02);
+      return Math.sign(Math.sin(2*Math.PI*220*t)) * 0.45 * env;
+    }
+    // beep（既定）: 短いビープを4回
+    const slot = Math.floor(t / 0.5), inSlot = t - slot*0.5;
+    if (slot >= 4 || inSlot >= 0.22) return 0;
+    const env = Math.min(1, inSlot/0.01) * Math.min(1, (0.22-inSlot)/0.02);
+    return Math.sin(2*Math.PI*880*t) * 0.85 * env;
+  }
+
+  // 無音(silenceSec) + 指定の音 のWAVを生成
+  function makeRestWav(silenceSec, type) {
+    const sr = 8000, beepSec = soundDef(type).sec;
     const total = Math.ceil((silenceSec + beepSec) * sr);
     const bytes = 44 + total * 2;
     const buf = new ArrayBuffer(bytes);
@@ -1380,23 +1424,31 @@
     ws(36,'data'); v.setUint32(40, total*2, true);
     const start = Math.floor(silenceSec * sr);
     for (let i=start;i<total;i++){
-      const t = (i - start) / sr;
-      const slot = Math.floor(t / 0.5), inSlot = t - slot*0.5;
-      let s = 0;
-      if (slot < 4 && inSlot < 0.22) {
-        const env = Math.min(1, inSlot/0.01) * Math.min(1, (0.22-inSlot)/0.02);
-        s = Math.sin(2*Math.PI*880*t) * 0.85 * env;
-      }
+      const s = soundSample(type, (i - start) / sr);
       v.setInt16(44 + i*2, Math.max(-1,Math.min(1,s)) * 32767, true);
     }
     return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  // 設定画面での試聴（タイマー用の予約音は壊さない別プレイヤー）
+  let previewAudio = null, previewUrl = null;
+  function previewSound(type) {
+    try {
+      if (!previewAudio) previewAudio = new Audio();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(makeRestWav(0, type));
+      previewAudio.src = previewUrl;
+      previewAudio.currentTime = 0;
+      const pr = previewAudio.play();
+      if (pr && pr.catch) pr.catch(() => {});
+    } catch (_) {}
   }
 
   function scheduleRestSound(sec) {
     initAudio();
     if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
     try {
-      restAudioUrl = URL.createObjectURL(makeRestWav(sec));
+      restAudioUrl = URL.createObjectURL(makeRestWav(sec, state.restSound));
       restAudio.src = restAudioUrl;
       restAudio.currentTime = 0;
       const pr = restAudio.play();
@@ -1682,6 +1734,10 @@
         ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
       </div>
       <div class="set-note">時間になるとアラーム音が鳴ります。画面を消していても、他のアプリを見ていても鳴ります（アプリをスワイプで終了した場合は鳴りません）。</div>
+      <div class="sect-label">鳴らす音（タップで試聴）</div>
+      <div class="rest-pills" id="soundPills">
+        ${REST_SOUNDS.map(s=>`<button data-sound="${s.id}" class="${s.id===state.restSound?'on':''}">${s.label}</button>`).join('')}
+      </div>
       <div class="sect-label">記録中の画面</div>
       <div class="rest-pills" id="awakePills">
         <button data-awake="1" class="${state.keepAwake?'on':''}">スリープしない</button>
@@ -1710,6 +1766,14 @@
       try { localStorage.setItem('tsumiage-rest', state.restSec); } catch (_) {}
       sheet.querySelectorAll('#restPills button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rest,10)===state.restSec));
       if (state.restSec === 0) stopRest(false);
+    });
+    const soundEl = sheet.querySelector('#soundPills');
+    if (soundEl) soundEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sound]'); if (!b) return;
+      state.restSound = b.dataset.sound;
+      try { localStorage.setItem('tsumiage-sound', state.restSound); } catch (_) {}
+      soundEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.sound===state.restSound));
+      previewSound(state.restSound); // その場で試聴
     });
     const awakeEl = sheet.querySelector('#awakePills');
     if (awakeEl) awakeEl.addEventListener('click', (e) => {
@@ -1772,6 +1836,7 @@
     try { const s = parseFloat(localStorage.getItem('tsumiage-wstep')); if (s > 0) state.weightStep = s; } catch (_) {}
     try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
     try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
+    try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
     try { const le = parseInt(localStorage.getItem('tsumiage-lastexport'),10); if (!isNaN(le)) state.lastExport = le; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
     loadPlan();
