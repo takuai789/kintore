@@ -135,6 +135,20 @@
   /* バックアップ促し */
   .backup-warn { background: var(--amber-soft); color: #92400e; border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 16px; }
 
+  /* 自己ベスト更新バナー */
+  #prBanner {
+    position: fixed; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 84px); z-index: 880;
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;
+    border-radius: 16px; padding: 14px 18px;
+    box-shadow: 0 10px 30px rgba(245,158,11,0.45);
+    transform: translateY(140%); transition: transform 0.35s cubic-bezier(.32,.72,0,1);
+  }
+  #prBanner.show { transform: translateY(0); }
+  #prBanner .pr-ic { font-size: 28px; flex-shrink: 0; }
+  #prBanner .pr-txt { font-size: 14px; font-weight: 600; line-height: 1.5; }
+  #prBanner .pr-txt b { font-size: 15px; font-weight: 700; }
+
   /* ---- plan ---- */
   .plan-li { background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
   .plan-li .num { width: 24px; height: 24px; border-radius: 7px; background: var(--navy-soft); color: var(--navy); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -216,6 +230,8 @@
     transform: translateY(110%); transition: transform 0.32s cubic-bezier(.32,.72,0,1);
     max-height: 92%; overflow-y: auto;
   }
+  /* 休憩タイマー表示中は、シートがバーの下に隠れないよう上を空ける */
+  body.rest-on .sheet { max-height: calc(92% - 72px); }
   .sheet.show { transform: translateY(0); }
   .grabber { width: 38px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3); margin: 6px auto 12px; }
   .sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); text-align: center; }
@@ -297,8 +313,8 @@
     transform: translateY(-140%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
   }
   #restBar.show { transform: translateY(0); }
-  #restBar .rest-fill { position: absolute; inset: 0; width: 100%; background: rgba(245,158,11,0.35); transition: width 0.25s linear; }
-  #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+  #restBar .rest-fill { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--amber); transition: width 0.25s linear; }
+  #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px; }
   #restBar .rest-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
   #restBar .rest-time { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; min-width: 64px; }
   #restBar .rest-btn { margin-left: auto; padding: 10px 14px; min-height: 42px; border-radius: 10px; background: rgba(255,255,255,0.16); color: #fff; font-size: 13px; font-weight: 700; }
@@ -471,7 +487,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.0.0';
+  const APP_VERSION = '3.1.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -604,6 +620,20 @@
 
   // 前回値プレフィル: 指定種目の、beforeDateより前の最新ワークアウトの、setIndex番目（無ければ最後）のセット
   // その種目で最近使った重量（新しい順・重複なし・最大4件）
+  // その種目のこれまでの最大重量（指定の日付・セットを除いて集計）
+  function bestWeight(exId, excludeDate, excludeIdx) {
+    let best = 0;
+    for (const w of state.workouts) {
+      const en = w.entries.find(x => x.exerciseId === exId);
+      if (!en) continue;
+      en.sets.forEach((s, i) => {
+        if (w.id === excludeDate && i === excludeIdx) return; // 今記録したセット自身は除く
+        if (s.w > best) best = s.w;
+      });
+    }
+    return best;
+  }
+
   function recentWeights(exId, limit=4) {
     const out = [];
     const days = state.workouts.slice().sort((a,b)=> a.id < b.id ? 1 : -1);
@@ -950,7 +980,8 @@
       });
     }
     html += `<button class="add-ex" id="menuAddEx" style="margin-top:6px;">＋ 種目を追加</button>`;
-    if (!m._isNew) html += `<button class="sheet-del" id="menuDelete" style="margin-top:14px;">このメニューを削除</button>`;
+    if (!m._isNew) html += `<button class="sheet-toggle" id="menuDup" style="margin-top:14px;">このメニューを複製する</button>`;
+    if (!m._isNew) html += `<button class="sheet-del" id="menuDelete">このメニューを削除</button>`;
     body.innerHTML = html;
   }
 
@@ -979,9 +1010,30 @@
     }
     const addEx = e.target.closest('#menuAddEx');
     if (addEx) { openExercisePicker('menu'); return; }
+    const dupB = e.target.closest('#menuDup');
+    if (dupB) { duplicateMenu(); return; }
     const delB = e.target.closest('#menuDelete');
     if (delB) { confirmDeleteMenu(); return; }
   });
+
+  // 編集中のメニューを複製して、そのまま複製版の編集に切り替える
+  async function duplicateMenu() {
+    const m = state.editingMenu; if (!m) return;
+    const base = (m.name || '無題').trim();
+    // 「〜のコピー」「〜のコピー2」…と重複しない名前にする
+    let name = `${base}のコピー`, n = 2;
+    while (state.menus.some(x => x.name === name)) { name = `${base}のコピー${n}`; n++; }
+    const obj = {
+      id: uid(), name, note: (m.note||'').trim(),
+      items: m.items.map(it => ({ exerciseId: it.exerciseId, sets: it.sets, reps: it.reps, weight: it.weight || 0 })),
+      order: (Math.max(0, ...state.menus.map(x=>x.order||0))+1),
+      createdAt: now(), updatedAt: now(),
+    };
+    await put('menus', obj);
+    state.menus.push(obj);
+    openMenuEdit(obj.id);   // 複製版をそのまま編集
+    toast(`「${name}」を作成しました`);
+  }
   // 入力欄の変更を作業コピーに反映
   $('#menuEditBody').addEventListener('input', (e) => {
     const m = state.editingMenu; if (!m) return;
@@ -1267,10 +1319,15 @@
       const rv = cur.r;
       if (!rv) { toast('回数を選んでください'); return; }
       const setObj = { w: wv, r: rv, rpe: cur.rpe || null };
+      // 記録前の自己ベストと比較（今日の新規セットのみ祝う）
+      const prevBest = bestWeight(entry.exerciseId);
       if (isNew) entry.sets.push(setObj); else entry.sets[si] = setObj;
       await saveWorkout(w);
       closeSheet(); renderRec();
-      if (isNew && state.recDate === todayStr()) startRest(); // 今日の新規セットのみタイマー開始
+      if (isNew && state.recDate === todayStr()) {
+        startRest(); // タイマー開始
+        if (wv > 0 && wv > prevBest) prCelebrate(ex.name, wv);
+      }
     });
     if (!isNew) sheet.querySelector('#setDel').addEventListener('click', async () => {
       const s = entry.sets[si];
@@ -1368,6 +1425,7 @@
     state.restEndAt = 0;
     if (restTick) { clearInterval(restTick); restTick = null; }
     if (!finished) cancelRestSound(); // スキップ時は予約音も停止
+    document.body.classList.remove('rest-on');
     const bar = $('#restBar');
     if (bar) { bar.classList.remove('show'); setTimeout(() => bar.remove(), 300); }
     if (finished) restFinishEffect();
@@ -1393,6 +1451,7 @@
         <button class="rest-btn skip" id="restSkip">スキップ</button>
       </div>`;
     document.body.appendChild(bar);
+    document.body.classList.add('rest-on');
     bar.querySelector('#restPlus').addEventListener('click', () => extendRest(30));
     bar.querySelector('#restSkip').addEventListener('click', () => stopRest(false));
     requestAnimationFrame(() => bar.classList.add('show'));
@@ -1410,6 +1469,20 @@
       f.style.width = pct + '%';
     }
   }
+  // 自己ベスト更新のお祝い（タイマーの邪魔をしない控えめなバナー）
+  function prCelebrate(exName, weight) {
+    try { if (navigator.vibrate) navigator.vibrate([120, 60, 120, 60, 200]); } catch (_) {}
+    const old = $('#prBanner'); if (old) old.remove();
+    const b = document.createElement('div');
+    b.id = 'prBanner';
+    b.innerHTML = `<span class="pr-ic">🏆</span><span class="pr-txt"><b>自己ベスト更新！</b><br>${esc(exName)} ${fmtNum(weight)}kg</span>`;
+    document.body.appendChild(b);
+    requestAnimationFrame(() => b.classList.add('show'));
+    const close = () => { b.classList.remove('show'); setTimeout(() => b.remove(), 320); };
+    b.addEventListener('click', close);
+    setTimeout(close, 3200);
+  }
+
   function restFinishEffect() {
     try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (_) {}
     const old = $('#restFlash'); if (old) old.remove();
