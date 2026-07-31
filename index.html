@@ -135,6 +135,23 @@
   /* バックアップ促し */
   .backup-warn { background: var(--amber-soft); color: #92400e; border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 16px; }
 
+
+  /* ---- v3.4 UI改善 ---- */
+  .settings-btn { flex-shrink: 0; }
+  .nav-side.right { gap: 2px; }
+  .today-btn { padding: 8px 12px; min-height: 40px; font-size: 13px; font-weight: 600; color: var(--amber); }
+  #datePicker { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+  .datechip::after { content: ' ▾'; font-size: 11px; opacity: 0.6; }
+  .edit-label { padding: 8px 12px; min-height: 40px; border-radius: 9px; background: var(--bg); color: var(--navy); font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .menu-card .edit-label { margin-left: auto; }
+  .ex-guide { font-size: 12px; color: var(--secondary); line-height: 1.7; background: #fff; border-radius: 12px; padding: 12px 14px; margin: 4px 0 8px; }
+  .hint-note { font-size: 12px; color: var(--secondary); line-height: 1.6; margin: -4px 2px 8px; }
+  .target-add { width: 100%; padding: 10px; margin: 2px 0 4px; border-radius: 10px; background: var(--bg); color: var(--secondary); font-size: 12px; font-weight: 600; }
+  .ex-target { cursor: pointer; }
+  .sheet-star { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; vertical-align: -9px; margin-right: 2px; }
+  .sheet-star svg { width: 20px; height: 20px; }
+  .set-group + .sect-label { margin-top: 20px; }
+
   /* 自己ベスト更新バナー */
   #prBanner {
     position: fixed; left: 12px; right: 12px; bottom: calc(var(--safe-bottom) + 84px); z-index: 880;
@@ -232,6 +249,10 @@
   }
   /* 休憩タイマー表示中は、シートがバーの下に隠れないよう上を空ける */
   body.rest-on .sheet { max-height: calc(92% - 72px); }
+  /* タイマーのバーがナビバー（設定ボタン等）を覆わないよう、本体を下げる */
+  body.rest-on #app { padding-top: calc(var(--safe-top) + 62px); }
+  /* メニュー編集中はタブバーを隠し、モーダルであることを明示 */
+  body.editing .tabbar { display: none; }
   .sheet.show { transform: translateY(0); }
   .grabber { width: 38px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3); margin: 6px auto 12px; }
   .sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); text-align: center; }
@@ -356,7 +377,7 @@
       <div class="nav-side"></div>
       <span class="title">マッスル</span>
       <div class="nav-side right">
-        <button class="icon-btn" id="openSettings" aria-label="設定">
+        <button class="icon-btn settings-btn" aria-label="設定">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
       </div>
@@ -366,6 +387,8 @@
         <button class="arrow" id="datePrev" aria-label="前の日">‹</button>
         <button class="datechip" id="dateChip">今日</button>
         <button class="arrow" id="dateNext" aria-label="次の日">›</button>
+        <button class="today-btn" id="toTodayBtn">今日へ</button>
+        <input type="date" id="datePicker" aria-label="日付を選ぶ">
       </div>
       <div id="recBody"></div>
     </div>
@@ -376,7 +399,9 @@
     <div class="navbar">
       <div class="nav-side"></div>
       <span class="title">種目</span>
-      <div class="nav-side right"><button class="nav-btn" id="addExBtn">＋追加</button></div>
+      <div class="nav-side right"><button class="nav-btn" id="addExBtn">＋追加</button><button class="icon-btn settings-btn" aria-label="設定">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button></div>
     </div>
     <div class="scroll" id="exBody"></div>
   </div>
@@ -387,7 +412,9 @@
     <div class="navbar">
       <div class="nav-side"></div>
       <span class="title">メニュー</span>
-      <div class="nav-side right"><button class="nav-btn" id="addMenuBtn">＋作成</button></div>
+      <div class="nav-side right"><button class="nav-btn" id="addMenuBtn">＋作成</button><button class="icon-btn settings-btn" aria-label="設定">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button></div>
     </div>
     <div class="scroll" id="menuBody"></div>
   </div>
@@ -395,7 +422,7 @@
   <!-- ===== メニュー編集 ===== -->
   <div id="menuEditView" class="view">
     <div class="navbar">
-      <div class="nav-side"><button class="nav-btn" id="menuEditBack">‹ 戻る</button></div>
+      <div class="nav-side"><button class="nav-btn" id="menuEditBack">キャンセル</button></div>
       <span class="title" id="menuEditTitle">メニュー編集</span>
       <div class="nav-side right"><button class="nav-btn" id="menuEditSave">保存</button></div>
     </div>
@@ -487,7 +514,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.3.0';
+  const APP_VERSION = '3.4.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -515,6 +542,7 @@
     plan: [],          // 次回の予定（種目IDの配列・端末に記憶）
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
+    editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
     keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
@@ -701,7 +729,9 @@
           html += `<div class="fold-summary" data-toggle="${en.exerciseId}">${summary}</div></div>`;
           return;
         }
-        html += `${tgt ? `<div class="ex-target ${done?'ok':''}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>` : ''}`;
+        html += tgt
+          ? `<div class="ex-target ${done?'ok':''}" data-settarget="${ei}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>`
+          : `<button class="target-add" data-settarget="${ei}">＋ 今日の目標を決める</button>`;
         en.sets.forEach((s, si) => {
           html += `<div class="set-row" data-editset="${ei}:${si}">
             <span class="set-no">${si+1}</span>
@@ -727,7 +757,7 @@
   // ---------- render: 種目 ----------
   function renderEx() {
     const body = $('#exBody');
-    let html = '';
+    let html = `<div class="ex-guide">★＝よく使う（一番上にまとめる）／控えめ＝下にまとめる／非表示＝種目を選ぶ画面に出さない。<br>どれも記録は消えません。切り替えは各行の「編集」から。</div>`;
     for (const g of groupedExercises(true)) {
       const isLow = g.key==='lowkey';
       html += `<div class="cat-h ${g.key==='fav'?'fav':''} ${isLow?'low':''}">${g.label}</div>`;
@@ -737,9 +767,7 @@
           <span class="nm">${esc(ex.name)}</span>
           <span class="sp"></span>
           <span class="badge ${ex.isPreset?'preset':'mine'}">${ex.isPreset?'プリセット':'自分'}</span>
-          <button class="edit" data-editex="${ex.id}" aria-label="編集">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
-          </button>
+          <button class="edit-label" data-editex="${ex.id}">編集</button>
         </div>`;
       }
     }
@@ -820,7 +848,8 @@
     // --- 次回の予定（あるときだけ表示） ---
     state.plan = state.plan.filter(id => exById(id));
     if (state.plan.length) {
-      html += `<div class="sect-label" style="margin-top:8px;">次回の予定（${state.plan.length}種目）</div>`;
+      html += `<div class="sect-label" style="margin-top:8px;">次回の予定（${state.plan.length}種目）</div>
+        <div class="hint-note">次にジムでやる種目の控えです。予定は1つだけ持てます。</div>`;
       html += `<div class="plan-box">`;
       state.plan.forEach((id, i) => {
         const ex = exById(id);
@@ -852,15 +881,13 @@
         html += `<div class="menu-card">
           <div class="menu-card-h">
             <span class="menu-name">${esc(m.name)}</span>
-            <button class="menu-edit" data-menuedit="${m.id}" aria-label="編集">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
-            </button>
+            <button class="edit-label menu-edit" data-menuedit="${m.id}">編集</button>
           </div>
           ${m.note ? `<div class="menu-note">${esc(m.note)}</div>` : ''}
           <div class="menu-summary">${summary || '（種目なし）'}</div>
           <div class="menu-btns">
-            <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>今日の記録を始める</button>
-            <button class="menu-plan" data-menuplan="${m.id}" ${items.length?'':'disabled'}>予定に</button>
+            <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>今日の記録に入れる</button>
+            <button class="menu-plan" data-menuplan="${m.id}" ${items.length?'':'disabled'}>次回の予定にする</button>
           </div>
         </div>`;
       }
@@ -897,6 +924,8 @@
     const toPlan = e.target.closest('[data-menuplan]');
     if (toPlan) {
       const m = menuById(toPlan.dataset.menuplan); if (!m) return;
+      // 予定は1本だけ。既にあるなら上書き確認
+      if (state.plan.length && !confirm(`今ある予定を「${m.name}」で置き換えますか？\n（予定は1つだけ持てます）`)) return;
       state.plan = (m.items||[]).map(it => it.exerciseId).filter(id => exById(id));
       savePlan(); renderMenu();
       toast(`「${m.name}」を次回の予定にしました`);
@@ -936,12 +965,26 @@
     $('#menuView').classList.remove('active');
     $('#exView').classList.remove('active');
     $('#menuEditView').classList.add('active');
+    document.body.classList.add('editing');
+    state.editingSnapshot = JSON.stringify({ name: state.editingMenu.name, note: state.editingMenu.note, items: state.editingMenu.items });
     renderMenuEdit();
   }
-  function closeMenuEdit() {
+  // 未保存の変更があるか
+  function menuHasChanges() {
+    const m = state.editingMenu; if (!m) return false;
+    const nowSnap = JSON.stringify({ name: m.name, note: m.note, items: m.items });
+    return nowSnap !== state.editingSnapshot;
+  }
+  function closeMenuEdit(force) {
+    if (!force && menuHasChanges()) {
+      if (!confirm('保存していない変更があります。破棄して戻りますか？')) return false;
+    }
     state.editingMenu = null;
+    state.editingSnapshot = null;
+    document.body.classList.remove('editing');
     $('#menuEditView').classList.remove('active');
     switchTab('menu');
+    return true;
   }
 
   function renderMenuEdit() {
@@ -1046,7 +1089,7 @@
     }
   });
 
-  $('#menuEditBack').addEventListener('click', closeMenuEdit);
+  $('#menuEditBack').addEventListener('click', () => closeMenuEdit(false));
   $('#menuEditSave').addEventListener('click', async () => {
     const m = state.editingMenu; if (!m) return;
     const name = (m.name||'').trim();
@@ -1055,9 +1098,7 @@
     await put('menus', obj);
     const idx = state.menus.findIndex(x => x.id === obj.id);
     if (idx >= 0) state.menus[idx] = obj; else state.menus.push(obj);
-    state.editingMenu = null;
-    $('#menuEditView').classList.remove('active');
-    switchTab('menu');
+    closeMenuEdit(true);
     toast('保存しました');
   });
 
@@ -1066,9 +1107,7 @@
     if (!confirm(`メニュー「${m.name||'(無題)'}」を削除しますか？`)) return;
     await del('menus', m.id);
     state.menus = state.menus.filter(x => x.id !== m.id);
-    state.editingMenu = null;
-    $('#menuEditView').classList.remove('active');
-    switchTab('menu');
+    closeMenuEdit(true);
     toast('削除しました');
   }
 
@@ -1083,7 +1122,8 @@
     $('#recView').classList.toggle('active', tab==='rec');
     $('#menuView').classList.toggle('active', tab==='menu');
     $('#exView').classList.toggle('active', tab==='ex');
-    $('#menuEditView').classList.remove('active'); // タブ切替で編集画面は閉じる
+    if (state.editingMenu) { document.body.classList.remove('editing'); state.editingMenu = null; state.editingSnapshot = null; }
+    $('#menuEditView').classList.remove('active');
     if (tab==='menu') renderMenu();
     syncWakeLock();
   }
@@ -1092,7 +1132,20 @@
   // ---------- 日付ナビ ----------
   $('#datePrev').addEventListener('click', () => { state.recDate = shiftDay(state.recDate, -1); renderRec(); });
   $('#dateNext').addEventListener('click', () => { if (state.recDate < todayStr()) { state.recDate = shiftDay(state.recDate, 1); renderRec(); } });
-  $('#dateChip').addEventListener('click', () => { state.recDate = todayStr(); renderRec(); });
+  $('#dateChip').addEventListener('click', () => {
+    const dp = $('#datePicker');
+    dp.value = state.recDate;
+    dp.max = todayStr();
+    if (dp.showPicker) { try { dp.showPicker(); return; } catch (_) {} }
+    dp.click();
+  });
+  $('#datePicker').addEventListener('change', (e) => {
+    const v = e.target.value;
+    if (!v) return;
+    state.recDate = (v > todayStr()) ? todayStr() : v;
+    renderRec();
+  });
+  $('#toTodayBtn').addEventListener('click', () => { state.recDate = todayStr(); renderRec(); });
 
   // ---------- 記録ボディの操作（イベント委任） ----------
   $('#recBody').addEventListener('click', (e) => {
@@ -1110,6 +1163,8 @@
     if (editSet) { const [ei,si] = editSet.dataset.editset.split(':').map(Number); openSetSheet(ei, si); return; }
     const delEx = e.target.closest('[data-delex]');
     if (delEx) { confirmDelEntry(parseInt(delEx.dataset.delex,10)); return; }
+    const st = e.target.closest('[data-settarget]');
+    if (st) { openTargetSheet(parseInt(st.dataset.settarget,10)); return; }
     const tg = e.target.closest('[data-toggle]');
     if (tg) { const id = tg.dataset.toggle; state.collapsed[id] = !state.collapsed[id]; renderRec(); return; }
   });
@@ -1122,6 +1177,51 @@
     [w.entries[i], w.entries[j]] = [w.entries[j], w.entries[i]];
     await saveWorkout(w);
     renderRec();
+  }
+
+  // その日の種目に目標（回数×セット数、重量は任意）を設定
+  function openTargetSheet(ei) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const entry = w.entries[ei];
+    const ex = exById(entry.exerciseId); if (!ex) return;
+    const t0 = entry.target || {};
+    let cur = { reps: t0.reps || 10, sets: t0.sets || 3, weight: t0.weight || 0 };
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <div class="grabber"></div>
+      <h3>${esc(ex.name)}の目標</h3>
+      <div class="sub">今日この種目でこなす目安です</div>
+      <div class="medit-goals">
+        <div class="goal"><span class="gl">回数</span>
+          <button class="gpm" data-tg="reps:-1">−</button><span class="gv" id="tgReps">${cur.reps}</span><button class="gpm" data-tg="reps:1">＋</button>
+        </div>
+        <div class="goal"><span class="gl">セット</span>
+          <button class="gpm" data-tg="sets:-1">−</button><span class="gv" id="tgSets">${cur.sets}</span><button class="gpm" data-tg="sets:1">＋</button>
+        </div>
+        <div class="goal"><span class="gl">重量</span>
+          <button class="gpm" data-tg="weight:-1">−</button><span class="gv" id="tgW">${cur.weight?fmtNum(cur.weight)+'kg':'任意'}</span><button class="gpm" data-tg="weight:1">＋</button>
+        </div>
+      </div>
+      <button class="sheet-save" id="tgSave">目標を設定する</button>
+      ${entry.target ? `<button class="sheet-del" id="tgClear">目標を外す</button>` : ''}`;
+    openSheet(sheet);
+    sheet.querySelector('.medit-goals').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tg]'); if (!b) return;
+      const [k, d] = b.dataset.tg.split(':'); const dd = parseInt(d,10);
+      if (k === 'reps') { cur.reps = Math.max(1, Math.min(50, cur.reps + dd)); $('#tgReps').textContent = cur.reps; }
+      if (k === 'sets') { cur.sets = Math.max(1, Math.min(20, cur.sets + dd)); $('#tgSets').textContent = cur.sets; }
+      if (k === 'weight') { cur.weight = Math.max(0, Math.round((cur.weight + dd*state.weightStep)*100)/100); $('#tgW').textContent = cur.weight ? fmtNum(cur.weight)+'kg' : '任意'; }
+    });
+    sheet.querySelector('#tgSave').addEventListener('click', async () => {
+      entry.target = { reps: cur.reps, sets: cur.sets, weight: cur.weight || 0 };
+      await saveWorkout(w); closeSheet(); renderRec();
+    });
+    const clr = sheet.querySelector('#tgClear');
+    if (clr) clr.addEventListener('click', async () => {
+      delete entry.target;
+      await saveWorkout(w); closeSheet(); renderRec();
+    });
   }
 
   // 記録済みセットにRPEを後から付ける
@@ -1246,7 +1346,7 @@
     sheet.className = 'sheet';
     sheet.innerHTML = `
       <div class="grabber"></div>
-      <h3>${esc(ex.name)}・${setIndex+1}セット目</h3>
+      <h3><button class="sheet-star" id="sheetFav" aria-label="お気に入り">${ex.fav?STAR_ON:STAR_OFF}</button>${esc(ex.name)}・${setIndex+1}セット目</h3>
       <div class="sub">${subText}</div>
       <div class="rpe-box">
         <div class="lbl">回数</div>
@@ -1282,6 +1382,14 @@
     `;
     openSheet(sheet);
 
+    const favBtn = sheet.querySelector('#sheetFav');
+    if (favBtn) favBtn.addEventListener('click', async () => {
+      await toggleFav(entry.exerciseId);
+      const ex2 = exById(entry.exerciseId);
+      favBtn.innerHTML = ex2.fav ? STAR_ON : STAR_OFF;
+      toast(ex2.fav ? 'お気に入りに追加' : 'お気に入りを解除');
+      renderEx();
+    });
     const inW = sheet.querySelector('#inW');
     inW.addEventListener('focus', () => setTimeout(() => inW.select(), 0));
     sheet.querySelector('#resetW').addEventListener('click', () => { inW.value = fmtNum(init.w); });
@@ -1714,7 +1822,7 @@
   }
 
   // ---------- 設定シート ----------
-  $('#openSettings').addEventListener('click', openSettings);
+  $$('.settings-btn').forEach(b => b.addEventListener('click', openSettings));
   function openSettings() {
     const totalWorkouts = state.workouts.length;
     const totalSets = state.workouts.reduce((t,w)=> t + w.entries.reduce((a,e)=>a+e.sets.length,0), 0);
