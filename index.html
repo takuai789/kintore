@@ -87,7 +87,13 @@
   .ex-name { font-size: 16px; font-weight: 700; color: var(--navy); }
   .ex-cat { font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 6px; }
   .ex-del { color: var(--tertiary); width: 44px; height: 44px; margin-right: -10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .set-row { display: flex; align-items: center; gap: 10px; padding: 13px 2px; min-height: 48px; border-top: 1px solid var(--sep); }
+  .set-row { display: flex; align-items: center; gap: 10px; padding: 13px 2px; min-height: 48px; border-top: 1px solid var(--sep);
+    position: relative; background: #fff; transition: transform 0.2s cubic-bezier(.32,.72,0,1); will-change: transform; }
+  .set-swipe { position: relative; overflow: hidden; }
+  .swipe-del { position: absolute; right: 0; top: 0; bottom: 0; width: 92px;
+    background: var(--red); color: #fff; font-size: 15px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; }
+  .swipe-del:active { background: #d92d22; }
   .set-no { width: 26px; height: 26px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
   .set-val .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
@@ -161,6 +167,7 @@
     box-shadow: 0 10px 30px rgba(245,158,11,0.45);
     transform: translateY(140%); transition: transform 0.35s cubic-bezier(.32,.72,0,1);
   }
+  #prBanner:not(.show) { pointer-events: none; }
   #prBanner.show { transform: translateY(0); }
   #prBanner .pr-ic { font-size: 28px; flex-shrink: 0; }
   #prBanner .pr-txt { font-size: 14px; font-weight: 600; line-height: 1.5; }
@@ -255,7 +262,20 @@
   body.editing .tabbar { display: none; }
   .sheet.show { transform: translateY(0); }
   .grabber { width: 38px; height: 5px; border-radius: 3px; background: rgba(60,60,67,0.3); margin: 6px auto 12px; }
-  .sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); text-align: center; }
+  .sheet h3 { font-size: 18px; font-weight: 700; color: var(--navy); text-align: center; padding: 0 44px; }
+  /* シート共通の閉じるボタン（右上） */
+  .sheet-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(120,120,128,0.16); color: var(--secondary);
+    display: flex; align-items: center; justify-content: center; z-index: 5;
+  }
+  .sheet-close:active { background: rgba(120,120,128,0.3); }
+  .sheet-done {
+    width: 100%; padding: 15px; margin-top: 8px;
+    background: var(--navy); color: #fff; border-radius: 14px;
+    font-size: 16px; font-weight: 700; text-align: center;
+  }
   .sheet .sub { text-align: center; font-size: 12px; color: var(--secondary); margin-top: 4px; margin-bottom: 16px; min-height: 16px; }
   .stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
   .stepper .lbl { font-size: 15px; font-weight: 600; }
@@ -321,10 +341,6 @@
   /* toast */
   #toast { position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 90px); transform: translate(-50%, 20px); background: rgba(30,58,95,0.96); color: #fff; padding: 11px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 900; opacity: 0; transition: all 0.3s; pointer-events: none; max-width: calc(100vw - 32px); }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
-  #toast.with-action { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; pointer-events: auto; }
-  #toast .tmsg { flex: 1; }
-  #toast .tundo { padding: 10px 14px; min-height: 40px; border-radius: 9px; background: rgba(255,255,255,0.18); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; }
-  #toast .tundo:active { background: rgba(255,255,255,0.3); }
 
   /* ---- rest timer ---- */
   #restBar {
@@ -333,6 +349,7 @@
     box-shadow: 0 8px 24px rgba(30,58,95,0.4);
     transform: translateY(-140%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
   }
+  #restBar:not(.show) { pointer-events: none; }
   #restBar.show { transform: translateY(0); }
   #restBar .rest-fill { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--amber); transition: width 0.25s linear; }
   #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px; }
@@ -345,6 +362,8 @@
     display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center;
     opacity: 0; transition: opacity 0.3s;
   }
+  #restFlash:not(.show):not(.closing) { pointer-events: none; } /* 出現前は反応しない */
+  #restFlash.closing { pointer-events: auto; }  /* 消え際も下のボタンを守る */
   #restFlash.show { opacity: 1; }
   #restFlash .rest-flash-msg { font-size: 30px; font-weight: 700; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.2); }
   #restFlash .rest-flash-sub { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.9); }
@@ -364,6 +383,7 @@
     box-shadow: 0 8px 28px rgba(30,58,95,0.4);
     transform: translateY(160%); transition: transform 0.35s cubic-bezier(.32,.72,0,1);
   }
+  #updateBanner:not(.show) { pointer-events: none; }
   #updateBanner.show { transform: translateY(0); }
   #updateBanner svg { flex-shrink: 0; }
 </style>
@@ -471,25 +491,8 @@
 
   function toast(msg) {
     const t = $('#toast');
-    t.classList.remove('with-action');
     t.textContent = msg; t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1800);
-  }
-  // 取り消しボタン付きトースト
-  function toastUndo(msg, onUndo) {
-    const t = $('#toast');
-    t.classList.add('with-action');
-    t.innerHTML = `<span class="tmsg"></span><button class="tundo">取り消す</button>`;
-    t.querySelector('.tmsg').textContent = msg;
-    t.classList.add('show');
-    const btn = t.querySelector('.tundo');
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      clearTimeout(t._t);
-      t.classList.remove('show');
-      await onUndo();
-    });
-    clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 4000);
   }
 
   // ---------- IndexedDB ----------
@@ -514,7 +517,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.4.0';
+  const APP_VERSION = '3.6.1';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -733,10 +736,13 @@
           ? `<div class="ex-target ${done?'ok':''}" data-settarget="${ei}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>`
           : `<button class="target-add" data-settarget="${ei}">＋ 今日の目標を決める</button>`;
         en.sets.forEach((s, si) => {
-          html += `<div class="set-row" data-editset="${ei}:${si}">
-            <span class="set-no">${si+1}</span>
-            <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
-            ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : `<button class="rpe-add" data-rpeadd="${ei}:${si}">RPE＋</button>`}
+          html += `<div class="set-swipe">
+            <button class="swipe-del" data-swipedel="${ei}:${si}">削除</button>
+            <div class="set-row" data-editset="${ei}:${si}">
+              <span class="set-no">${si+1}</span>
+              <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
+              ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : `<button class="rpe-add" data-rpeadd="${ei}:${si}">RPE＋</button>`}
+            </div>
           </div>`;
         });
         const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date);
@@ -1148,6 +1154,85 @@
   $('#toTodayBtn').addEventListener('click', () => { state.recDate = todayStr(); renderRec(); });
 
   // ---------- 記録ボディの操作（イベント委任） ----------
+  // ---------- セット行のスワイプ削除 ----------
+  const SWIPE_W = 92;           // 削除ボタンの幅
+  let swipe = null;             // 進行中のスワイプ情報
+
+  function closeSwipes(except) {
+    $$('.set-row.swiped').forEach(r => {
+      if (r === except) return;
+      r.classList.remove('swiped');
+      r.style.transform = '';
+    });
+  }
+
+  const recBodyEl = $('#recBody');
+  recBodyEl.addEventListener('touchstart', (e) => {
+    const row = e.target.closest('.set-row');
+    if (!row) { closeSwipes(null); swipe = null; return; }
+    const opened = row.classList.contains('swiped');
+    closeSwipes(row);
+    swipe = {
+      el: row,
+      x: e.touches[0].clientX, y: e.touches[0].clientY,
+      base: opened ? -SWIPE_W : 0,
+      dx: opened ? -SWIPE_W : 0,
+      decided: false, horiz: false,
+    };
+  }, { passive: true });
+
+  recBodyEl.addEventListener('touchmove', (e) => {
+    if (!swipe) return;
+    const dx = e.touches[0].clientX - swipe.x;
+    const dy = e.touches[0].clientY - swipe.y;
+    if (!swipe.decided) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;   // 微動は無視
+      swipe.decided = true;
+      swipe.horiz = Math.abs(dx) > Math.abs(dy) * 1.2;    // 横が優勢な時だけスワイプ扱い
+      if (!swipe.horiz) { swipe = null; return; }         // 縦スクロールは邪魔しない
+      swipe.el.style.transition = 'none';
+    }
+    if (!swipe.horiz) return;
+    let t = swipe.base + dx;
+    t = Math.max(-SWIPE_W - 24, Math.min(0, t));          // 右には動かさない
+    swipe.dx = t;
+    swipe.el.style.transform = `translateX(${t}px)`;
+    if (e.cancelable) e.preventDefault();                 // 横に振った時だけ既定動作を止める
+  }, { passive: false });
+
+  function endSwipe() {
+    if (!swipe) return;
+    const { el, horiz, dx } = swipe;
+    if (horiz) {
+      el.style.transition = '';
+      const open = dx < -SWIPE_W / 2;
+      el.classList.toggle('swiped', open);
+      el.style.transform = open ? `translateX(${-SWIPE_W}px)` : '';
+      // スワイプ直後のタップで編集シートが開かないように
+      el.dataset.justSwiped = '1';
+      setTimeout(() => { delete el.dataset.justSwiped; }, 350);
+    }
+    swipe = null;
+  }
+  recBodyEl.addEventListener('touchend', endSwipe, { passive: true });
+  recBodyEl.addEventListener('touchcancel', endSwipe, { passive: true });
+
+  // スワイプで出した削除ボタン
+  async function swipeDeleteSet(ei, si) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const entry = w.entries[ei];
+    const s = entry.sets[si]; if (!s) return;
+    // 最後の1セットだけは種目ごと消えるので確認する
+    if (entry.sets.length === 1) {
+      const ex = exById(entry.exerciseId);
+      if (!confirm(`最後のセットです。削除すると「${ex ? ex.name : '種目'}」も記録から外れます。よろしいですか？`)) { closeSwipes(null); return; }
+    }
+    entry.sets.splice(si, 1);
+    if (!entry.sets.length) w.entries.splice(ei, 1);
+    await saveWorkout(w);
+    renderRec();
+  }
+
   $('#recBody').addEventListener('click', (e) => {
     const addEx = e.target.closest('#addExToDay');
     if (addEx) { openExercisePicker(); return; }
@@ -1159,14 +1244,21 @@
     if (rep) { repeatLastSet(parseInt(rep.dataset.repeatset,10)); return; }
     const addSet = e.target.closest('[data-addset]');
     if (addSet) { openSetSheet(parseInt(addSet.dataset.addset,10), null); return; }
+    const swDel = e.target.closest('[data-swipedel]');
+    if (swDel) { const [ei,si] = swDel.dataset.swipedel.split(':').map(Number); swipeDeleteSet(ei, si); return; }
     const editSet = e.target.closest('[data-editset]');
-    if (editSet) { const [ei,si] = editSet.dataset.editset.split(':').map(Number); openSetSheet(ei, si); return; }
+    if (editSet) {
+      if (editSet.dataset.justSwiped) return;                 // スワイプ直後は開かない
+      if (editSet.classList.contains('swiped')) { closeSwipes(null); return; } // 開いていたら閉じるだけ
+      const [ei,si] = editSet.dataset.editset.split(':').map(Number); openSetSheet(ei, si); return;
+    }
     const delEx = e.target.closest('[data-delex]');
     if (delEx) { confirmDelEntry(parseInt(delEx.dataset.delex,10)); return; }
     const st = e.target.closest('[data-settarget]');
     if (st) { openTargetSheet(parseInt(st.dataset.settarget,10)); return; }
     const tg = e.target.closest('[data-toggle]');
     if (tg) { const id = tg.dataset.toggle; state.collapsed[id] = !state.collapsed[id]; renderRec(); return; }
+    closeSwipes(null);
   });
 
   // 種目カードの並べ替え
@@ -1268,17 +1360,7 @@
     renderRec();
     const setNo = entry.sets.length;
     if (state.recDate === todayStr()) startRest();
-    toastUndo(`${setNo}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`, async () => {
-      const w2 = workoutByDate(state.recDate); if (!w2) return;
-      const en2 = w2.entries.find(x => x.exerciseId === entry.exerciseId);
-      if (!en2 || en2.sets.length !== setNo) return; // その後に操作があれば何もしない
-      en2.sets.pop();
-      if (!en2.sets.length) w2.entries = w2.entries.filter(x => x !== en2);
-      await saveWorkout(w2);
-      stopRest(false); // 走り出したタイマーと予約音も止める
-      renderRec();
-      toast('取り消しました');
-    });
+    toast(`${setNo}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`);
   }
 
   async function confirmDelEntry(ei) {
@@ -1297,6 +1379,17 @@
   function openSheet(node) {
     closeSheet(true);
     activeSheet = node;
+    // すべてのシートに共通の「閉じる」を付ける（終え方が分かるように）
+    const h3 = node.querySelector('h3');
+    if (h3 && !node.querySelector('.sheet-close')) {
+      const btn = document.createElement('button');
+      btn.className = 'sheet-close';
+      btn.setAttribute('aria-label', '閉じる');
+      btn.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+      btn.addEventListener('click', () => closeSheet());
+      h3.insertAdjacentElement('afterend', btn);
+      node.classList.add('has-close');
+    }
     document.body.appendChild(node);
     $('#overlay').classList.add('show');
     requestAnimationFrame(() => node.classList.add('show'));
@@ -1457,11 +1550,12 @@
   let restAudio = null, restAudioUrl = null, audioReady = false;
 
   function initAudio() {
-    if (restAudio) return;
+    if (restAudio) { bindAudioRecovery(); return; }
     restAudio = new Audio();
     restAudio.preload = 'auto';
     // 他アプリの音楽を止めないよう ambient を試し、不可なら既定のまま
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    bindAudioRecovery();
   }
   // 初回タップで再生権限を解除（iOSはユーザー操作が必要）
   function unlockAudio() {
@@ -1563,6 +1657,25 @@
       if (pr && pr.catch) pr.catch(() => {});
     } catch (_) {}
   }
+
+  // 予約音が生きているか確認し、止まっていたら残り時間で鳴らし直す。
+  // （他アプリが音を鳴らすとiOSはこちらの再生を中断するため）
+  function ensureRestSoundAlive() {
+    if (!state.restEndAt) return;                       // タイマーが動いていない
+    if (!state.restSec) return;                         // 音オフ
+    const remain = state.restEndAt - Date.now();
+    if (remain <= 0) return;                            // 時間切れは updateRestBar 側で処理
+    const dead = !restAudio || restAudio.paused || restAudio.ended;
+    if (dead) scheduleRestSound(remain / 1000);         // 残り秒数で再スケジュール
+  }
+  // 音声が中断/停止したら、その場で復帰を試みる
+  function bindAudioRecovery() {
+    if (!restAudio || restAudio._recoveryBound) return;
+    restAudio._recoveryBound = true;
+    // iOSが他アプリの音で中断したとき
+    restAudio.addEventListener('pause', () => { setTimeout(ensureRestSoundAlive, 300); });
+    restAudio.addEventListener('error', () => { setTimeout(ensureRestSoundAlive, 300); });
+  }
   function cancelRestSound() {
     if (!restAudio) return;
     try { restAudio.pause(); restAudio.currentTime = 0; } catch (_) {}
@@ -1616,9 +1729,12 @@
     bar.querySelector('#restSkip').addEventListener('click', () => stopRest(false));
     requestAnimationFrame(() => bar.classList.add('show'));
   }
+  let soundCheckTick = 0;
   function updateRestBar() {
     const remain = state.restEndAt - Date.now();
     if (remain <= 0) { stopRest(true); return; }
+    // 約2秒に1回、予約音が生きているか確認
+    if (++soundCheckTick % 8 === 0) ensureRestSoundAlive();
     const t = $('#restTime'); const f = $('#restFill');
     if (t) {
       const s = Math.ceil(remain / 1000);
@@ -1655,8 +1771,9 @@
     const close = () => {
       if (closed) return; closed = true;
       clearTimeout(autoClose);
-      flash.classList.remove('show');   // 透明になってもタップは受け止めたまま
-      setTimeout(() => flash.remove(), 320); // 消え際の誤タップを防ぐ
+      flash.classList.remove('show');
+      flash.classList.add('closing');        // 消え際も下のボタンを守るため受け止め続ける
+      setTimeout(() => flash.remove(), 320); // 320ms後に確実にDOMから除去
     };
     // フラッシュ自身がタップを受け止めるので、下のボタンを誤爆しない
     flash.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); close(); });
@@ -1664,7 +1781,10 @@
   }
   // バックグラウンドから戻ったとき、経過を反映（iOSはinterval停止するため）
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.restEndAt) updateRestBar();
+    if (document.visibilityState === 'visible' && state.restEndAt) {
+      updateRestBar();
+      ensureRestSoundAlive();   // 他アプリの音で止められていたら鳴らし直す
+    }
   });
 
   // ---------- 種目ピッカー（選択→確定ボタン方式） ----------
@@ -1864,10 +1984,12 @@
         </button>
       </div>
       <div class="set-note">書き出したJSONをiCloud Drive等に置けば、別の端末で「取り込む」を押して同期できます。同じ記録は新しい方が残ります（スマートマージ）。</div>
+      <button class="sheet-done" id="settingsDone">完了</button>
       <div class="ver">マッスル v${APP_VERSION}</div>
       <input type="file" id="importFile" accept="application/json,.json" style="display:none">
     `;
     openSheet(sheet);
+    sheet.querySelector('#settingsDone').addEventListener('click', () => closeSheet());
     sheet.querySelector('#restPills').addEventListener('click', (e) => {
       const b = e.target.closest('[data-rest]'); if (!b) return;
       state.restSec = parseInt(b.dataset.rest,10);
