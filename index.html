@@ -517,7 +517,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.6.1';
+  const APP_VERSION = '3.7.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -1571,10 +1571,14 @@
   // 無音(silenceSec) + ビープ のWAVを生成
   // 鳴らせる音の種類（波形は数式で生成）
   const REST_SOUNDS = [
-    { id: 'beep',  label: 'ピピッ',   sec: 2.1 },
-    { id: 'chime', label: 'ピンポン', sec: 2.4 },
-    { id: 'bell',  label: 'ベル',     sec: 2.6 },
-    { id: 'buzz',  label: 'ブザー',   sec: 2.2 },
+    { id: 'beep',   label: 'ピピッ',   sec: 2.1 },
+    { id: 'chime',  label: 'ピンポン', sec: 2.4 },
+    { id: 'bell',   label: 'ベル',     sec: 2.6 },
+    { id: 'buzz',   label: 'ブザー',   sec: 2.2 },
+    { id: 'rise',   label: '上昇音',   sec: 2.0 },
+    { id: 'marimba',label: 'マリンバ', sec: 2.4 },
+    { id: 'digital',label: 'デジタル', sec: 2.2 },
+    { id: 'gong',   label: 'ゴング',   sec: 2.8 },
   ];
   const soundDef = (id) => REST_SOUNDS.find(s => s.id === id) || REST_SOUNDS[0];
 
@@ -1604,6 +1608,42 @@
       if (slot >= 3 || inSlot >= 0.35) return 0;
       const env = Math.min(1, inSlot/0.01) * Math.min(1, (0.35-inSlot)/0.02);
       return Math.sign(Math.sin(2*Math.PI*220*t)) * 0.45 * env;
+    }
+    if (type === 'rise') {
+      // 上昇音: 低→高へ駆け上がる。3回繰り返し
+      const hit = Math.floor(t / 0.62), dt = t - hit*0.62;
+      if (hit >= 3 || dt >= 0.42) return 0;
+      const freq = 440 + 660 * (dt / 0.42);          // 440→1100Hz
+      const env = Math.min(1, dt/0.01) * Math.min(1, (0.42-dt)/0.06);
+      return Math.sin(2*Math.PI*freq*t) * 0.8 * env;
+    }
+    if (type === 'marimba') {
+      // マリンバ: 木琴風の3音（ド→ミ→ソ）。柔らかく減衰
+      const notes = [523, 659, 784];
+      const hit = Math.floor(t / 0.55), dt = t - hit*0.55;
+      if (hit >= 3 || dt >= 0.5) return 0;
+      const fq = notes[hit];
+      const env = Math.min(1, dt/0.004) * Math.exp(-6.5 * dt);
+      const base = Math.sin(2*Math.PI*fq*t);
+      const over = Math.sin(2*Math.PI*fq*4*t) * 0.18;  // 木質感の倍音
+      return (base + over) * 0.75 * env;
+    }
+    if (type === 'digital') {
+      // デジタル: 高低2音を素早く交互に。電子アラーム風
+      const hit = Math.floor(t / 0.55), dt = t - hit*0.55;
+      if (hit >= 4 || dt >= 0.34) return 0;
+      const freq = (Math.floor(dt / 0.085) % 2 === 0) ? 1600 : 1200;
+      const env = Math.min(1, dt/0.005) * Math.min(1, (0.34-dt)/0.02);
+      return Math.sign(Math.sin(2*Math.PI*freq*t)) * 0.32 * env;
+    }
+    if (type === 'gong') {
+      // ゴング: 低い一打。長い余韻でうるさくない
+      if (t >= 2.7) return 0;
+      const env = Math.min(1, t/0.006) * Math.exp(-1.5 * t);
+      const a = Math.sin(2*Math.PI*146*t);
+      const b = Math.sin(2*Math.PI*220*t) * 0.5;
+      const c = Math.sin(2*Math.PI*349*t) * 0.25;
+      return (a + b + c) * 0.5 * env;
     }
     // beep（既定）: 短いビープを4回
     const slot = Math.floor(t / 0.5), inSlot = t - slot*0.5;
