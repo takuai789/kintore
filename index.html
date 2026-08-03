@@ -152,8 +152,6 @@
   .menu-card .edit-label { margin-left: auto; }
   .ex-guide { font-size: 12px; color: var(--secondary); line-height: 1.7; background: #fff; border-radius: 12px; padding: 12px 14px; margin: 4px 0 8px; }
   .hint-note { font-size: 12px; color: var(--secondary); line-height: 1.6; margin: -4px 2px 8px; }
-  .target-add { width: 100%; padding: 10px; margin: 2px 0 4px; border-radius: 10px; background: var(--bg); color: var(--secondary); font-size: 12px; font-weight: 600; }
-  .ex-target { cursor: pointer; }
   .sheet-star { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; vertical-align: -9px; margin-right: 2px; }
   .sheet-star svg { width: 20px; height: 20px; }
   .set-group + .sect-label { margin-top: 20px; }
@@ -221,6 +219,7 @@
   .medit-goals .gv { flex: 1; text-align: center; font-size: 17px; font-weight: 700; color: var(--navy); }
 
   /* ---- target badge in record ---- */
+  .ex-time { font-size: 12px; font-weight: 600; color: var(--secondary); padding: 2px 2px 6px; }
   .ex-target { font-size: 12px; font-weight: 600; color: var(--amber); background: var(--amber-soft); border-radius: 8px; padding: 6px 10px; margin: 2px 0 4px; }
   .ex-target .prog { color: var(--secondary); font-weight: 500; }
 
@@ -311,6 +310,7 @@
   .pick-item { min-height: 52px; }
   .pick-item.selected { background: var(--navy-soft); box-shadow: inset 0 0 0 2px var(--navy); }
   .pick-item.used { opacity: 0.4; }
+  .pick-arrow { margin-left: auto; color: var(--amber); font-size: 20px; font-weight: 700; flex-shrink: 0; width: 26px; text-align: center; }
   .pick-check { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--sep); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
   .pick-check.on { background: var(--navy); border-color: var(--navy); }
   .ck.used { margin-left: auto; font-size: 12px; color: var(--tertiary); font-weight: 600; }
@@ -517,7 +517,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.7.0';
+  const APP_VERSION = '3.9.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -547,6 +547,7 @@
     editingMenu: null, // メニュー編集中の作業コピー
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
     keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
+    multiPick: false,  // 種目選びで複数まとめて追加するか（端末に記憶）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
@@ -712,8 +713,9 @@
         const tgt = en.target;
         const done = tgt && en.sets.length >= tgt.sets;      // 目標達成
         const folded = !!state.collapsed[en.exerciseId];
+        const tr0 = timeRange(en.sets);
         const summary = en.sets.length
-          ? `${en.sets.length}セット・${en.sets.map(s=>s.r).join('/')}回`
+          ? `${en.sets.length}セット・${en.sets.map(s=>s.r).join('/')}回${tr0 ? '　🕒 '+tr0 : ''}`
           : 'まだ記録なし';
         html += `<div class="ex-card ${done?'done':''} ${folded?'folded':''}">
           <div class="ex-head" data-toggle="${en.exerciseId}">
@@ -732,9 +734,11 @@
           html += `<div class="fold-summary" data-toggle="${en.exerciseId}">${summary}</div></div>`;
           return;
         }
+        const tr = timeRange(en.sets);
+        if (tr) html += `<div class="ex-time">🕒 ${tr}</div>`;
         html += tgt
-          ? `<div class="ex-target ${done?'ok':''}" data-settarget="${ei}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>`
-          : `<button class="target-add" data-settarget="${ei}">＋ 今日の目標を決める</button>`;
+          ? `<div class="ex-target ${done?'ok':''}">${done?'✅':'🎯'} 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回 × ${tgt.sets}セット　<span class="prog">${en.sets.length}/${tgt.sets}セット完了</span></div>`
+          : '';
         en.sets.forEach((s, si) => {
           html += `<div class="set-swipe">
             <button class="swipe-del" data-swipedel="${ei}:${si}">削除</button>
@@ -1120,6 +1124,19 @@
 
   function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
   function fmtNum(n){ return String(Math.round(n*100)/100); }
+  // ミリ秒 → "19:32"
+  function fmtTime(ms){
+    const d = new Date(ms);
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  // その種目の実施時刻（最初のセット〜最後のセット）
+  function timeRange(sets){
+    const ts = sets.map(s => s.at).filter(Boolean);
+    if (!ts.length) return null;
+    const first = Math.min(...ts), last = Math.max(...ts);
+    if (ts.length === 1 || first === last) return fmtTime(first);
+    return `${fmtTime(first)} → ${fmtTime(last)}`;
+  }
 
   // ---------- タブ切替 ----------
   function switchTab(tab) {
@@ -1254,8 +1271,6 @@
     }
     const delEx = e.target.closest('[data-delex]');
     if (delEx) { confirmDelEntry(parseInt(delEx.dataset.delex,10)); return; }
-    const st = e.target.closest('[data-settarget]');
-    if (st) { openTargetSheet(parseInt(st.dataset.settarget,10)); return; }
     const tg = e.target.closest('[data-toggle]');
     if (tg) { const id = tg.dataset.toggle; state.collapsed[id] = !state.collapsed[id]; renderRec(); return; }
     closeSwipes(null);
@@ -1269,51 +1284,6 @@
     [w.entries[i], w.entries[j]] = [w.entries[j], w.entries[i]];
     await saveWorkout(w);
     renderRec();
-  }
-
-  // その日の種目に目標（回数×セット数、重量は任意）を設定
-  function openTargetSheet(ei) {
-    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
-    const entry = w.entries[ei];
-    const ex = exById(entry.exerciseId); if (!ex) return;
-    const t0 = entry.target || {};
-    let cur = { reps: t0.reps || 10, sets: t0.sets || 3, weight: t0.weight || 0 };
-    const sheet = document.createElement('div');
-    sheet.className = 'sheet';
-    sheet.innerHTML = `
-      <div class="grabber"></div>
-      <h3>${esc(ex.name)}の目標</h3>
-      <div class="sub">今日この種目でこなす目安です</div>
-      <div class="medit-goals">
-        <div class="goal"><span class="gl">回数</span>
-          <button class="gpm" data-tg="reps:-1">−</button><span class="gv" id="tgReps">${cur.reps}</span><button class="gpm" data-tg="reps:1">＋</button>
-        </div>
-        <div class="goal"><span class="gl">セット</span>
-          <button class="gpm" data-tg="sets:-1">−</button><span class="gv" id="tgSets">${cur.sets}</span><button class="gpm" data-tg="sets:1">＋</button>
-        </div>
-        <div class="goal"><span class="gl">重量</span>
-          <button class="gpm" data-tg="weight:-1">−</button><span class="gv" id="tgW">${cur.weight?fmtNum(cur.weight)+'kg':'任意'}</span><button class="gpm" data-tg="weight:1">＋</button>
-        </div>
-      </div>
-      <button class="sheet-save" id="tgSave">目標を設定する</button>
-      ${entry.target ? `<button class="sheet-del" id="tgClear">目標を外す</button>` : ''}`;
-    openSheet(sheet);
-    sheet.querySelector('.medit-goals').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-tg]'); if (!b) return;
-      const [k, d] = b.dataset.tg.split(':'); const dd = parseInt(d,10);
-      if (k === 'reps') { cur.reps = Math.max(1, Math.min(50, cur.reps + dd)); $('#tgReps').textContent = cur.reps; }
-      if (k === 'sets') { cur.sets = Math.max(1, Math.min(20, cur.sets + dd)); $('#tgSets').textContent = cur.sets; }
-      if (k === 'weight') { cur.weight = Math.max(0, Math.round((cur.weight + dd*state.weightStep)*100)/100); $('#tgW').textContent = cur.weight ? fmtNum(cur.weight)+'kg' : '任意'; }
-    });
-    sheet.querySelector('#tgSave').addEventListener('click', async () => {
-      entry.target = { reps: cur.reps, sets: cur.sets, weight: cur.weight || 0 };
-      await saveWorkout(w); closeSheet(); renderRec();
-    });
-    const clr = sheet.querySelector('#tgClear');
-    if (clr) clr.addEventListener('click', async () => {
-      delete entry.target;
-      await saveWorkout(w); closeSheet(); renderRec();
-    });
   }
 
   // 記録済みセットにRPEを後から付ける
@@ -1355,7 +1325,7 @@
     const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
     const entry = w.entries[ei];
     const last = entry.sets[entry.sets.length-1]; if (!last) return;
-    entry.sets.push({ w: last.w, r: last.r, rpe: last.rpe || null });
+    entry.sets.push({ w: last.w, r: last.r, rpe: last.rpe || null, at: now() });
     await saveWorkout(w);
     renderRec();
     const setNo = entry.sets.length;
@@ -1519,7 +1489,7 @@
       const wv = Math.max(0, parseFloat(inW.value)||0);
       const rv = cur.r;
       if (!rv) { toast('回数を選んでください'); return; }
-      const setObj = { w: wv, r: rv, rpe: cur.rpe || null };
+      const setObj = { w: wv, r: rv, rpe: cur.rpe || null, at: isNew ? now() : (entry.sets[si]?.at || null) };
       // 記録前の自己ベストと比較（今日の新規セットのみ祝う）
       const prevBest = bestWeight(entry.exerciseId);
       if (isNew) entry.sets.push(setObj); else entry.sets[si] = setObj;
@@ -1837,23 +1807,26 @@
     else usedIds = new Set();
 
     const selected = new Set();
+    const multi = state.multiPick;   // 設定：複数選択モードか
 
     const titleMap = { record: '種目を追加', plan: '予定に種目を追加', menu: 'メニューに種目を追加' };
-    const subMap = { record: 'タップで選択（複数可）→ 下のボタンで追加', plan: 'タップで選択（複数可）→ 下のボタンで追加', menu: 'タップで選択（複数可）→ 下のボタンで追加' };
+    const subSingle = 'タップするとすぐ追加されます';
+    const subMulti  = 'タップで選択（複数可）→ 下のボタンで追加';
     const sheet = document.createElement('div');
     sheet.className = 'sheet';
     sheet.innerHTML = `
       <div class="grabber"></div>
       <h3>${titleMap[mode]||'種目を選ぶ'}</h3>
-      <div class="sub">${subMap[mode]||''}</div>
+      <div class="sub">${multi ? subMulti : subSingle}</div>
       <div class="pick-list"></div>
-      <div class="pick-footer">
+      ${multi ? `<div class="pick-footer">
         <button class="pick-confirm" id="pickConfirm" disabled>種目を選んでください</button>
-      </div>`;
+      </div>` : ''}`;
     const listEl = sheet.querySelector('.pick-list');
     const confirmBtn = sheet.querySelector('#pickConfirm');
 
     function updateConfirm() {
+      if (!confirmBtn) return;
       const n = selected.size;
       confirmBtn.disabled = (n === 0);
       confirmBtn.textContent = (n === 0) ? '種目を選んでください' : `${n}種目を追加する`;
@@ -1869,7 +1842,8 @@
           const sel = selected.has(ex.id);
           const usedLabel = mode==='plan' ? '予定済み' : '追加済み';
           const right = used ? `<span class="ck used">${usedLabel}</span>`
-                             : `<span class="pick-check ${sel?'on':''}">${sel?'✓':''}</span>`;
+                             : (multi ? `<span class="pick-check ${sel?'on':''}">${sel?'✓':''}</span>`
+                                      : `<span class="pick-arrow">＋</span>`);
           inner += `<div class="pick-item ${isLow?'low':''} ${sel?'selected':''} ${used?'used':''}" data-pick="${ex.id}">
             <span>${esc(ex.name)}</span>${right}
           </div>`;
@@ -1881,17 +1855,10 @@
     buildList();
     openSheet(sheet);
 
-    listEl.addEventListener('click', (e) => {
-      const item = e.target.closest('[data-pick]'); if (!item) return;
-      const exId = item.dataset.pick;
-      if (usedIds.has(exId)) { toast('すでに追加済みです'); return; }
-      if (selected.has(exId)) selected.delete(exId); else selected.add(exId);
-      buildList();
-    });
-
-    confirmBtn.addEventListener('click', async () => {
-      if (!selected.size) return;
-      const ids = [...selected];
+    // 選んだ種目を実際に追加する（単数・複数の共通処理）
+    async function commitPick(ids) {
+      if (!ids.length) return;
+      const single = ids.length === 1 ? exById(ids[0]) : null;
       if (mode==='record') {
         const wk = await ensureWorkout(state.recDate);
         for (const exId of ids) {
@@ -1899,18 +1866,29 @@
         }
         await saveWorkout(wk);
         closeSheet(); renderRec();
-        toast(`${ids.length}種目を追加しました`);
+        toast(single ? `${single.name}を追加` : `${ids.length}種目を追加しました`);
       } else if (mode==='plan') {
         for (const exId of ids) if (!state.plan.includes(exId)) state.plan.push(exId);
         savePlan();
         closeSheet(); renderMenu();
-        toast(`${ids.length}種目を予定に追加`);
+        toast(single ? `${single.name}を予定に追加` : `${ids.length}種目を予定に追加`);
       } else if (mode==='menu') {
         if (state.editingMenu) for (const exId of ids) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
         closeSheet(); renderMenuEdit();
-        toast(`${ids.length}種目をメニューに追加`);
+        toast(single ? `${single.name}をメニューに追加` : `${ids.length}種目をメニューに追加`);
       }
+    }
+
+    listEl.addEventListener('click', async (e) => {
+      const item = e.target.closest('[data-pick]'); if (!item) return;
+      const exId = item.dataset.pick;
+      if (usedIds.has(exId)) { toast('すでに追加済みです'); return; }
+      if (!multi) { await commitPick([exId]); return; }   // 1個ずつ：タップで即追加
+      if (selected.has(exId)) selected.delete(exId); else selected.add(exId);
+      buildList();
     });
+
+    if (confirmBtn) confirmBtn.addEventListener('click', () => commitPick([...selected]));
   }
 
   // ---------- 種目 追加/編集 ----------
@@ -2012,6 +1990,12 @@
         <button data-awake="0" class="${state.keepAwake?'':'on'}">通常どおり</button>
       </div>
       <div class="set-note">記録タブを開いている間、画面が自動で暗くならないようにします。ジムでの誤タップ防止に。</div>
+      <div class="sect-label">種目の選び方</div>
+      <div class="rest-pills" id="pickPills">
+        <button data-multi="0" class="${state.multiPick?'':'on'}">1個ずつ追加</button>
+        <button data-multi="1" class="${state.multiPick?'on':''}">まとめて追加</button>
+      </div>
+      <div class="set-note">「1個ずつ」はタップしたらすぐ追加されます。「まとめて」は複数選んでから確定ボタンで追加します。</div>
       ${backupNote}
       <div class="set-group">
         <button class="set-item" id="btnExport">
@@ -2044,6 +2028,13 @@
       try { localStorage.setItem('tsumiage-sound', state.restSound); } catch (_) {}
       soundEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.sound===state.restSound));
       previewSound(state.restSound); // その場で試聴
+    });
+    const pickEl = sheet.querySelector('#pickPills');
+    if (pickEl) pickEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-multi]'); if (!b) return;
+      state.multiPick = (b.dataset.multi === '1');
+      try { localStorage.setItem('tsumiage-multipick', state.multiPick ? '1' : '0'); } catch (_) {}
+      pickEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.multi==='1')===state.multiPick));
     });
     const awakeEl = sheet.querySelector('#awakePills');
     if (awakeEl) awakeEl.addEventListener('click', (e) => {
@@ -2107,6 +2098,7 @@
     try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
     try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
     try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
+    try { const mp = localStorage.getItem('tsumiage-multipick'); if (mp !== null) state.multiPick = (mp === '1'); } catch (_) {}
     try { const le = parseInt(localStorage.getItem('tsumiage-lastexport'),10); if (!isNaN(le)) state.lastExport = le; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
     loadPlan();
