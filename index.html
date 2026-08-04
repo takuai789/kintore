@@ -517,7 +517,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.9.0';
+  const APP_VERSION = '3.10.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -548,6 +548,7 @@
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
     keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
     multiPick: false,  // 種目選びで複数まとめて追加するか（端末に記憶）
+    mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
@@ -1517,26 +1518,26 @@
   // ===================== レストタイマー =====================
   // iOS対策: 「無音+アラーム音」の音声を先に再生しておくことで、
   // アプリを閉じていても時間が来た瞬間に音で知らせる（PWAは予約通知ができないため）
-  let restAudio = null, restAudioUrl = null, audioReady = false;
+  let restAudio = null, restAudioUrl = null;
 
   function initAudio() {
-    if (restAudio) { bindAudioRecovery(); return; }
+    if (restAudio) { applyAudioSession(); bindAudioRecovery(); return; }
     restAudio = new Audio();
     restAudio.preload = 'auto';
-    // 他アプリの音楽を止めないよう ambient を試し、不可なら既定のまま
-    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+    applyAudioSession();
     bindAudioRecovery();
   }
-  // 初回タップで再生権限を解除（iOSはユーザー操作が必要）
-  function unlockAudio() {
-    initAudio();
-    if (audioReady) return;
-    restAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
-    const pr = restAudio.play();
-    if (pr && pr.then) pr.then(() => { audioReady = true; restAudio.pause(); }).catch(() => {});
+  // 再生の性格を指定する
+  //   playback     … 画面ロック中も鳴る代わり、他アプリの音楽を止める
+  //   ambient      … 音楽と共存できる代わり、画面ロック中は鳴らない
+  function applyAudioSession() {
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = state.mixAudio ? 'ambient' : 'playback';
+    } catch (_) {}
   }
-  document.addEventListener('touchend', unlockAudio, true);
-  document.addEventListener('click', unlockAudio, true);
+  // 以前はアプリを開いた最初のタップで無音を再生して許可を取っていたが、
+  // それだけで再生中の音楽が止まってしまうため廃止。
+  // 音を扱うのは「セットを記録してタイマーが始まる瞬間」だけにする。
 
   // 無音(silenceSec) + ビープ のWAVを生成
   // 鳴らせる音の種類（波形は数式で生成）
@@ -1657,6 +1658,7 @@
   }
 
   function scheduleRestSound(sec) {
+    if (!state.restSec) return;   // 音オフなら音声に一切触れない（音楽を止めない）
     initAudio();
     if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
     try {
@@ -1685,10 +1687,19 @@
     // iOSが他アプリの音で中断したとき
     restAudio.addEventListener('pause', () => { setTimeout(ensureRestSoundAlive, 300); });
     restAudio.addEventListener('error', () => { setTimeout(ensureRestSoundAlive, 300); });
+    // 最後まで鳴り切ったら解放（ダイナミックアイランドに残さない）
+    restAudio.addEventListener('ended', () => { if (!state.restEndAt) cancelRestSound(); });
   }
+  let releaseTimer = null;
   function cancelRestSound() {
+    clearTimeout(releaseTimer); releaseTimer = null;
     if (!restAudio) return;
-    try { restAudio.pause(); restAudio.currentTime = 0; } catch (_) {}
+    try {
+      restAudio.pause();
+      restAudio.currentTime = 0;
+      restAudio.removeAttribute('src');   // 再生セッションを手放す
+      restAudio.load();
+    } catch (_) {}
     if (restAudioUrl) { URL.revokeObjectURL(restAudioUrl); restAudioUrl = null; }
   }
 
@@ -1707,7 +1718,14 @@
   function stopRest(finished) {
     state.restEndAt = 0;
     if (restTick) { clearInterval(restTick); restTick = null; }
-    if (!finished) cancelRestSound(); // スキップ時は予約音も停止
+    if (finished) {
+      // 鳴り終わるのを待ってから解放（メディア再生の表示を残さない）
+      const wait = (soundDef(state.restSound).sec + 0.3) * 1000;
+      clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(cancelRestSound, wait);
+    } else {
+      cancelRestSound(); // スキップ時は即停止
+    }
     document.body.classList.remove('rest-on');
     const bar = $('#restBar');
     if (bar) { bar.classList.remove('show'); setTimeout(() => bar.remove(), 300); }
@@ -1791,9 +1809,12 @@
   }
   // バックグラウンドから戻ったとき、経過を反映（iOSはinterval停止するため）
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.restEndAt) {
-      updateRestBar();
+    if (document.visibilityState !== 'visible') return;
+    if (state.restEndAt) {
+      updateRestBar();          // 時間切れならここで stopRest(true) が走る
       ensureRestSoundAlive();   // 他アプリの音で止められていたら鳴らし直す
+    } else if (restAudio && !restAudio.paused) {
+      cancelRestSound();        // タイマーは終わっているのに鳴り続けていたら解放
     }
   });
 
@@ -1980,6 +2001,12 @@
         ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
       </div>
       <div class="set-note">時間になるとアラーム音が鳴ります。画面を消していても、他のアプリを見ていても鳴ります（アプリをスワイプで終了した場合は鳴りません）。</div>
+      <div class="sect-label">音楽を聴いているとき</div>
+      <div class="rest-pills" id="mixPills">
+        <button data-mix="0" class="${state.mixAudio?'':'on'}">確実に鳴らす</button>
+        <button data-mix="1" class="${state.mixAudio?'on':''}">音楽を止めない</button>
+      </div>
+      <div class="set-note">「確実に鳴らす」は画面を消していても鳴りますが、タイマー中は音楽が止まります。「音楽を止めない」は音楽と共存できますが、画面を消していると鳴りません。</div>
       <div class="sect-label">鳴らす音（タップで試聴）</div>
       <div class="rest-pills" id="soundPills">
         ${REST_SOUNDS.map(s=>`<button data-sound="${s.id}" class="${s.id===state.restSound?'on':''}">${s.label}</button>`).join('')}
@@ -2028,6 +2055,14 @@
       try { localStorage.setItem('tsumiage-sound', state.restSound); } catch (_) {}
       soundEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.sound===state.restSound));
       previewSound(state.restSound); // その場で試聴
+    });
+    const mixEl = sheet.querySelector('#mixPills');
+    if (mixEl) mixEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-mix]'); if (!b) return;
+      state.mixAudio = (b.dataset.mix === '1');
+      try { localStorage.setItem('tsumiage-mixaudio', state.mixAudio ? '1' : '0'); } catch (_) {}
+      mixEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.mix==='1')===state.mixAudio));
+      applyAudioSession();
     });
     const pickEl = sheet.querySelector('#pickPills');
     if (pickEl) pickEl.addEventListener('click', (e) => {
@@ -2099,6 +2134,7 @@
     try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
     try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
     try { const mp = localStorage.getItem('tsumiage-multipick'); if (mp !== null) state.multiPick = (mp === '1'); } catch (_) {}
+    try { const mx = localStorage.getItem('tsumiage-mixaudio'); if (mx !== null) state.mixAudio = (mx === '1'); } catch (_) {}
     try { const le = parseInt(localStorage.getItem('tsumiage-lastexport'),10); if (!isNaN(le)) state.lastExport = le; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
     loadPlan();
