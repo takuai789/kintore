@@ -128,12 +128,6 @@
   .done-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--green); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
   .ex-target.ok { color: var(--green); background: rgba(22,163,74,0.1); }
 
-  /* 予定ボックス（メニュータブ内） */
-  .plan-box { background: rgba(255,255,255,0.5); border-radius: 14px; padding: 2px 0 0; }
-  .menu-btns { display: flex; gap: 8px; margin-top: 12px; }
-  .menu-btns .menu-go { flex: 1; margin-top: 0; }
-  .menu-plan { flex-shrink: 0; padding: 12px 16px; border-radius: 12px; background: var(--navy-soft); color: var(--navy); font-size: 14px; font-weight: 700; }
-  .menu-plan:disabled { opacity: 0.4; }
 
   /* 最近使った重量 */
 
@@ -142,6 +136,15 @@
 
 
 
+
+  /* ---- タブ並べ替え ---- */
+  .tab-order { background: #fff; border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
+  .to-row { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 0.5px solid var(--sep); }
+  .to-row:last-child { border-bottom: 0; }
+  .to-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .to-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    color: var(--navy); font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .to-btn:disabled { color: var(--tertiary); opacity: 0.35; }
 
   /* ---- 履歴タブ ---- */
   .hist-card { background: #fff; border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
@@ -217,22 +220,6 @@
   #prBanner .pr-txt { font-size: 14px; font-weight: 600; line-height: 1.5; }
   #prBanner .pr-txt b { font-size: 15px; font-weight: 700; }
 
-  /* ---- plan ---- */
-  .plan-li { background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-  .plan-li .num { width: 24px; height: 24px; border-radius: 7px; background: var(--navy-soft); color: var(--navy); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .plan-li .nm { font-size: 15px; font-weight: 600; }
-  .plan-li .cat { font-size: 11px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 8px; border-radius: 6px; margin-left: auto; }
-  .plan-li .rm { width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; color: var(--tertiary); flex-shrink: 0; }
-  .plan-start { width: 100%; padding: 15px; background: var(--amber); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin: 14px 0 10px; }
-  .plan-actions { display: flex; flex-direction: column; gap: 2px; }
-  .plan-actions button { padding: 12px; border-radius: 12px; background: #fff; color: var(--navy); font-size: 14px; font-weight: 600; }
-  .plan-actions button.danger { color: var(--red); }
-  .plan-sub-btn { width: 100%; padding: 13px; color: var(--navy); font-size: 14px; font-weight: 600; text-align: center; margin-top: 10px; }
-  .menu-item { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 8px; }
-  .menu-item:active { background: #f0f0f3; }
-  .menu-d { font-size: 12px; font-weight: 700; color: var(--amber); margin-bottom: 4px; }
-  .menu-ex { font-size: 14px; font-weight: 600; color: var(--navy); line-height: 1.5; }
-  .menu-cnt { font-size: 11px; color: var(--secondary); margin-top: 4px; }
 
   /* ---- menu tab ---- */
   .menu-card { background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
@@ -241,7 +228,7 @@
   .menu-edit { margin-left: auto; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--secondary); flex-shrink: 0; }
   .menu-note { font-size: 12px; color: var(--secondary); margin-top: 4px; line-height: 1.5; }
   .menu-summary { font-size: 13px; color: var(--navy); margin-top: 8px; line-height: 1.7; }
-  .menu-go { width: 100%; padding: 12px; background: var(--amber); color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; text-align: center; margin-top: 12px; }
+  .menu-go { width: 100%; padding: 13px; margin-top: 12px; background: var(--amber); color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; text-align: center; margin-top: 12px; }
   .menu-go:disabled { background: var(--tertiary); }
 
   /* ---- menu edit ---- */
@@ -491,24 +478,7 @@
   </div>
 
   <!-- ===== tabbar ===== -->
-  <div class="tabbar">
-    <button class="tab active" data-tab="rec">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-      <span>記録</span>
-    </button>
-    <button class="tab" data-tab="hist">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
-      <span>履歴</span>
-    </button>
-    <button class="tab" data-tab="menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"/><path d="m4 7 8 4.5L20 7"/><path d="M12 20v-8.5"/></svg>
-      <span>メニュー</span>
-    </button>
-    <button class="tab" data-tab="ex">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-      <span>種目</span>
-    </button>
-  </div>
+  <div class="tabbar" id="tabbar"></div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -562,7 +532,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.13.0';
+  const APP_VERSION = '3.15.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -587,7 +557,6 @@
     restSec: 90,       // レストタイマー秒数（端末に記憶・0でオフ）
     restSound: 'beep', // 鳴らす音の種類（端末に記憶）
     restEndAt: 0,      // 実行中タイマーの終了時刻(ms)。0=停止
-    plan: [],          // 次回の予定（種目IDの配列・端末に記憶）
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
@@ -596,12 +565,10 @@
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     histOpen: null,    // 履歴タブで展開中の種目ID
+    tabOrder: ['rec','hist','menu','ex'], // 下のタブの並び順（端末に記憶）
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
 
-  function savePlan() {
-    try { localStorage.setItem('tsumiage-plan', JSON.stringify(state.plan)); } catch (_) {}
-  }
 
   // ---------- 画面を消させない（Wake Lock） ----------
   let wakeLock = null;
@@ -624,9 +591,6 @@
     else releaseWakeLock();
   }
   document.addEventListener('visibilitychange', syncWakeLock);
-  function loadPlan() {
-    try { const p = JSON.parse(localStorage.getItem('tsumiage-plan')); if (Array.isArray(p)) state.plan = p; } catch (_) {}
-  }
 
   async function loadAll() {
     state.exercises = await getAll('exercises');
@@ -730,15 +694,26 @@
   }
 
   // 前回その種目をやった日の「最後のセット」を返す
+  // ---- 実施履歴のたった一つの集計元 ----
+  // その種目を実施した日を新しい順に返す。beforeDate を渡すとその日より前だけ。
+  // 「前回」も「履歴タブ」もここを通すことで、定義のズレを防ぐ。
+  function sessionsOf(exId, beforeDate) {
+    return state.workouts
+      .filter(w => (beforeDate ? w.id < beforeDate : true))
+      .map(w => ({ date: w.id, entry: w.entries.find(en => en.exerciseId === exId) }))
+      .filter(x => x.entry && x.entry.sets.length)
+      .sort((a,b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));
+  }
+  // 直近の実施1件（{date, sets, last, setCount}）。無ければ null
+  function lastSessionOf(exId, beforeDate) {
+    const s = sessionsOf(exId, beforeDate)[0];
+    if (!s) return null;
+    return { date: s.date, sets: s.entry.sets, last: s.entry.sets[s.entry.sets.length-1], setCount: s.entry.sets.length };
+  }
+  // 「前回」= 直近実施日の最後のセット
   function prevSetFor(exId, beforeDate) {
-    const past = state.workouts
-      .filter(w => w.id < beforeDate)
-      .sort((a,b) => b.id < a.id ? -1 : 1);
-    for (const w of past) {
-      const e = w.entries.find(en => en.exerciseId === exId);
-      if (e && e.sets.length) return e.sets[e.sets.length - 1];
-    }
-    return null;
+    const s = lastSessionOf(exId, beforeDate);
+    return s ? s.last : null;
   }
 
   // ---------- render: 記録 ----------
@@ -834,61 +809,8 @@
     renderRec(); renderEx(); renderMenu();
   }
 
-  // 実績のある直近ワークアウト（新しい順）
-  function recentWorkouts(n=5) {
-    return state.workouts
-      .filter(w => w.entries.some(e => e.sets.length))
-      .slice()
-      .sort((a,b) => a.id < b.id ? 1 : -1)
-      .slice(0, n);
-  }
 
-  // 直近メニューから取り込み（置き換え）
-  function openPlanImport() {
-    const recents = recentWorkouts(5);
-    const sheet = document.createElement('div');
-    sheet.className = 'sheet';
-    let inner = `<div class="grabber"></div><h3>直近メニューから取り込む</h3><div class="sub">選ぶと、その日の種目構成を予定にします</div><div class="pick-list">`;
-    if (!recents.length) {
-      inner += `<div class="empty">まだ記録がありません。</div>`;
-    } else {
-      for (const w of recents) {
-        const names = w.entries.filter(en => en.sets.length).map(en => { const ex = exById(en.exerciseId); return ex ? ex.name : null; }).filter(Boolean);
-        inner += `<div class="menu-item" data-menu="${w.id}">
-          <div class="menu-d">${fmtDate(w.id)}</div>
-          <div class="menu-ex">${names.map(esc).join(' ・ ')}</div>
-          <div class="menu-cnt">${names.length}種目</div>
-        </div>`;
-      }
-    }
-    inner += `</div>`;
-    sheet.innerHTML = inner;
-    openSheet(sheet);
-    sheet.querySelector('.pick-list').addEventListener('click', (e) => {
-      const item = e.target.closest('[data-menu]'); if (!item) return;
-      const w = workoutByDate(item.dataset.menu); if (!w) return;
-      const ids = [];
-      for (const en of w.entries) { if (en.sets.length && exById(en.exerciseId) && !ids.includes(en.exerciseId)) ids.push(en.exerciseId); }
-      state.plan = ids; savePlan();
-      closeSheet(); renderMenu();
-      toast('予定に取り込みました');
-    });
-  }
 
-  // 予定 → 今日の記録に一括投入
-  async function startPlanToday() {
-    if (!state.plan.length) return;
-    const wk = await ensureWorkout(todayStr());
-    let added = 0;
-    for (const exId of state.plan) {
-      if (!exById(exId)) continue;
-      if (!wk.entries.some(en => en.exerciseId === exId)) { wk.entries.push({ exerciseId: exId, sets: [] }); added++; }
-    }
-    await saveWorkout(wk);
-    state.recDate = todayStr();
-    switchTab('rec'); renderRec();
-    toast(added ? `今日の記録に${added}種目を追加` : '種目はすでに揃っています');
-  }
 
   // ===================== マイメニュー =====================
   const menuById = (id) => state.menus.find(m => m.id === id);
@@ -898,19 +820,13 @@
   // ---------- render: 履歴（種目ごとに最終実施を1行） ----------
   // 種目ごとの「最後にやった日」と「その日の最後のセット」を集計
   function lastByExercise() {
-    const map = new Map();   // exerciseId -> { date, set, setCount }
-    for (const w of state.workouts) {
-      for (const en of w.entries) {
-        if (!en.sets.length) continue;
-        const cur = map.get(en.exerciseId);
-        if (!cur || w.id > cur.date) {
-          map.set(en.exerciseId, { date: w.id, set: en.sets[en.sets.length-1], setCount: en.sets.length });
-        }
-      }
-    }
-    return [...map.entries()]
-      .filter(([id]) => exById(id))
-      .map(([id, v]) => ({ ex: exById(id), ...v }))
+    // 記録に登場する種目を集め、共通の集計元から直近実施を引く
+    const ids = new Set();
+    for (const w of state.workouts) for (const en of w.entries) if (en.sets.length) ids.add(en.exerciseId);
+    return [...ids]
+      .filter(id => exById(id))
+      .map(id => ({ ex: exById(id), ...lastSessionOf(id) }))
+      .filter(r => r.date)
       .sort((a,b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));  // 直近順
   }
 
@@ -939,8 +855,8 @@
             <div class="hist-date">${histDateLabel(r.date)}</div>
           </div>
           <div class="hist-latest">
-            <span class="hl-w">${fmtNum(r.set.w)}<span class="u">kg</span></span>
-            <span class="hl-r">${r.set.r}回 / ${r.setCount}セット</span>
+            <span class="hl-w">${fmtNum(r.last.w)}<span class="u">kg</span></span>
+            <span class="hl-r">${r.last.r}回 / ${r.setCount}セット</span>
           </div>
         </div>
         ${open ? renderHistDetail(r.ex.id) : ''}
@@ -951,15 +867,10 @@
 
   // その種目の過去の記録（直近5日分）
   function renderHistDetail(exId) {
-    const days = state.workouts
-      .filter(w => w.entries.some(en => en.exerciseId === exId && en.sets.length))
-      .sort((a,b) => a.id < b.id ? 1 : -1)
-      .slice(0, 5);
     let html = '<div class="hist-detail">';
-    for (const w of days) {
-      const en = w.entries.find(x => x.exerciseId === exId);
-      const sets = en.sets.map(s => `${s.r}×${fmtNum(s.w)}kg`).join(' / ');
-      html += `<div class="hd-row"><span class="hd-d">${fmtDate(w.id)}</span><span class="hd-s">${sets}</span></div>`;
+    for (const s of sessionsOf(exId).slice(0, 5)) {
+      const sets = s.entry.sets.map(x => `${x.r}×${fmtNum(x.w)}kg`).join(' / ');
+      html += `<div class="hd-row"><span class="hd-d">${fmtDate(s.date)}</span><span class="hd-s">${sets}</span></div>`;
     }
     html += '</div>';
     return html;
@@ -973,41 +884,13 @@
     renderHist();
   });
 
-  // ---------- render: メニュー一覧（＋次回の予定） ----------
+  // ---------- render: メニュー一覧 ----------
   function renderMenu() {
     const body = $('#menuBody');
     const menus = sortedMenus();
     let html = '';
-
-    // --- 次回の予定（あるときだけ表示） ---
-    state.plan = state.plan.filter(id => exById(id));
-    if (state.plan.length) {
-      html += `<div class="sect-label" style="margin-top:8px;">次回の予定（${state.plan.length}種目）</div>
-        <div class="hint-note">次にジムでやる種目の控えです。予定は1つだけ持てます。</div>`;
-      html += `<div class="plan-box">`;
-      state.plan.forEach((id, i) => {
-        const ex = exById(id);
-        html += `<div class="plan-li">
-          <span class="num">${i+1}</span>
-          <span class="nm">${esc(ex.name)}</span>
-          <span class="cat">${ex.category}</span>
-          <button class="rm" data-planrm="${id}" aria-label="外す">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </div>`;
-      });
-      html += `<button class="plan-start" id="planStart">この予定で今日の記録を始める</button>
-        <div class="plan-actions">
-          <button data-planact="add">種目を追加</button>
-          <button data-planact="clear" class="danger">予定をクリア</button>
-        </div>
-      </div>`;
-    }
-
-    // --- マイメニュー ---
-    html += `<div class="sect-label" style="margin-top:${state.plan.length?'20px':'8px'};">マイメニュー</div>`;
     if (!menus.length) {
-      html += `<div class="empty" style="padding:24px 12px;"><span class="em">📑</span>トレーナー指定のメニューなどを<br>名前を付けて保存できます。<br>右上の「＋作成」から作ってください。</div>`;
+      html += `<div class="empty"><span class="em">📑</span>トレーナー指定のメニューなどを<br>名前を付けて保存できます。<br>右上の「＋作成」から作ってください。</div>`;
     } else {
       for (const m of menus) {
         const items = (m.items||[]).filter(it => exById(it.exerciseId));
@@ -1019,52 +902,16 @@
           </div>
           ${m.note ? `<div class="menu-note">${esc(m.note)}</div>` : ''}
           <div class="menu-summary">${summary || '（種目なし）'}</div>
-          <div class="menu-btns">
-            <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>今日の記録に入れる</button>
-            <button class="menu-plan" data-menuplan="${m.id}" ${items.length?'':'disabled'}>次回の予定にする</button>
-          </div>
+          <button class="menu-go" data-menugo="${m.id}" ${items.length?'':'disabled'}>今日の記録に入れる</button>
         </div>`;
       }
-    }
-
-    // --- 直近の実績から予定を作る ---
-    if (!state.plan.length) {
-      html += `<button class="plan-sub-btn" data-planact="import">直近のトレから予定を作る</button>`;
     }
     body.innerHTML = html;
   }
 
   $('#menuBody').addEventListener('click', async (e) => {
-    // 予定まわり
-    const rm = e.target.closest('[data-planrm]');
-    if (rm) {
-      const ex = exById(rm.dataset.planrm);
-      if (!confirm(`「${ex ? ex.name : '種目'}」を予定から外しますか？`)) return;
-      state.plan = state.plan.filter(id => id !== rm.dataset.planrm); savePlan(); renderMenu(); return;
-    }
-    const start = e.target.closest('#planStart');
-    if (start) { await startPlanToday(); return; }
-    const act = e.target.closest('[data-planact]');
-    if (act) {
-      const a = act.dataset.planact;
-      if (a === 'import') openPlanImport();
-      else if (a === 'add') openExercisePicker('plan');
-      else if (a === 'clear') { if (confirm('予定をクリアしますか？')) { state.plan = []; savePlan(); renderMenu(); } }
-      return;
-    }
-    // メニューまわり
     const go = e.target.closest('[data-menugo]');
     if (go) { await applyMenuToday(go.dataset.menugo); return; }
-    const toPlan = e.target.closest('[data-menuplan]');
-    if (toPlan) {
-      const m = menuById(toPlan.dataset.menuplan); if (!m) return;
-      // 予定は1本だけ。既にあるなら上書き確認
-      if (state.plan.length && !confirm(`今ある予定を「${m.name}」で置き換えますか？\n（予定は1つだけ持てます）`)) return;
-      state.plan = (m.items||[]).map(it => it.exerciseId).filter(id => exById(id));
-      savePlan(); renderMenu();
-      toast(`「${m.name}」を次回の予定にしました`);
-      return;
-    }
     const ed = e.target.closest('[data-menuedit]');
     if (ed) { openMenuEdit(ed.dataset.menuedit); return; }
   });
@@ -1263,9 +1110,35 @@
   }
 
   // ---------- タブ切替 ----------
+
+  // ---------- タブ定義（順序は設定で変更可） ----------
+  const TAB_DEFS = {
+    rec:  { label: '記録',     icon: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>' },
+    hist: { label: '履歴',     icon: '<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/>' },
+    menu: { label: 'メニュー', icon: '<path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"/><path d="m4 7 8 4.5L20 7"/><path d="M12 20v-8.5"/>' },
+    ex:   { label: '種目',     icon: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>' },
+  };
+  const DEFAULT_TAB_ORDER = ['rec','hist','menu','ex'];
+
+  function renderTabbar() {
+    const order = state.tabOrder;
+    $('#tabbar').innerHTML = order.map(id => {
+      const d = TAB_DEFS[id]; if (!d) return '';
+      return `<button class="tab ${state.tab===id?'active':''}" data-tab="${id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d.icon}</svg>
+        <span>${d.label}</span>
+      </button>`;
+    }).join('');
+  }
+  // タブは動的生成なので、委任で受ける
+  $('#tabbar').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tab]'); if (!b) return;
+    switchTab(b.dataset.tab);
+  });
+
   function switchTab(tab) {
     state.tab = tab;
-    $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    renderTabbar();
     $('#recView').classList.toggle('active', tab==='rec');
     $('#histView').classList.toggle('active', tab==='hist');
     $('#menuView').classList.toggle('active', tab==='menu');
@@ -1276,7 +1149,6 @@
     if (tab==='hist') renderHist();
     syncWakeLock();
   }
-  $$('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
   // ---------- 日付ナビ ----------
   $('#datePrev').addEventListener('click', () => { state.recDate = shiftDay(state.recDate, -1); renderRec(); });
@@ -1915,14 +1787,13 @@
     const w = mode==='record' ? workoutByDate(state.recDate) : null;
     let usedIds;
     if (mode==='record') usedIds = new Set(w ? w.entries.map(en=>en.exerciseId) : []);
-    else if (mode==='plan') usedIds = new Set(state.plan);
     else if (mode==='menu') usedIds = new Set((state.editingMenu?.items||[]).map(it=>it.exerciseId));
     else usedIds = new Set();
 
     const selected = new Set();
     const multi = state.multiPick;   // 設定：複数選択モードか
 
-    const titleMap = { record: '種目を追加', plan: '予定に種目を追加', menu: 'メニューに種目を追加' };
+    const titleMap = { record: '種目を追加', menu: 'メニューに種目を追加' };
     const subSingle = 'タップするとすぐ追加されます';
     const subMulti  = 'タップで選択（複数可）→ 下のボタンで追加';
     const sheet = document.createElement('div');
@@ -1953,7 +1824,7 @@
         for (const ex of g.items) {
           const used = usedIds.has(ex.id);
           const sel = selected.has(ex.id);
-          const usedLabel = mode==='plan' ? '予定済み' : '追加済み';
+          const usedLabel = '追加済み';
           const right = used ? `<span class="ck used">${usedLabel}</span>`
                              : (multi ? `<span class="pick-check ${sel?'on':''}">${sel?'✓':''}</span>`
                                       : `<span class="pick-arrow">＋</span>`);
@@ -1980,11 +1851,6 @@
         await saveWorkout(wk);
         closeSheet(); renderRec();
         toast(single ? `${single.name}を追加` : `${ids.length}種目を追加しました`);
-      } else if (mode==='plan') {
-        for (const exId of ids) if (!state.plan.includes(exId)) state.plan.push(exId);
-        savePlan();
-        closeSheet(); renderMenu();
-        toast(single ? `${single.name}を予定に追加` : `${ids.length}種目を予定に追加`);
       } else if (mode==='menu') {
         if (state.editingMenu) for (const exId of ids) state.editingMenu.items.push({ exerciseId: exId, sets: 3, reps: 10, weight: 0 });
         closeSheet(); renderMenuEdit();
@@ -2115,6 +1981,14 @@
         <button data-multi="1" class="${state.multiPick?'on':''}">まとめて追加</button>
       </div>
       <div class="set-note">「1個ずつ」はタップしたらすぐ追加されます。「まとめて」は複数選んでから確定ボタンで追加します。</div>
+      <div class="sect-label">下のタブの並び順</div>
+      <div class="tab-order" id="tabOrderList">${state.tabOrder.map((id,i)=>`
+        <div class="to-row">
+          <span class="to-name">${TAB_DEFS[id].label}</span>
+          <button class="to-btn" data-tabmove="${i}:-1" ${i===0?'disabled':''} aria-label="上へ">▲</button>
+          <button class="to-btn" data-tabmove="${i}:1" ${i===state.tabOrder.length-1?'disabled':''} aria-label="下へ">▼</button>
+        </div>`).join('')}</div>
+      <div class="set-note">上にあるものほど左に並びます。</div>
       ${backupNote}
       <div class="set-group">
         <button class="set-item" id="btnExport">
@@ -2147,6 +2021,25 @@
       try { localStorage.setItem('tsumiage-sound', state.restSound); } catch (_) {}
       soundEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.sound===state.restSound));
       previewSound(state.restSound); // その場で試聴
+    });
+    const orderEl = sheet.querySelector('#tabOrderList');
+    if (orderEl) orderEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tabmove]'); if (!b) return;
+      const [i, d] = b.dataset.tabmove.split(':').map(Number);
+      const j = i + d;
+      if (j < 0 || j >= state.tabOrder.length) return;
+      const arr = state.tabOrder.slice();
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      state.tabOrder = arr;
+      try { localStorage.setItem('tsumiage-taborder', JSON.stringify(arr)); } catch (_) {}
+      renderTabbar();
+      // 設定シート内の一覧も描き直す
+      orderEl.innerHTML = arr.map((id,k)=>`
+        <div class="to-row">
+          <span class="to-name">${TAB_DEFS[id].label}</span>
+          <button class="to-btn" data-tabmove="${k}:-1" ${k===0?'disabled':''} aria-label="上へ">▲</button>
+          <button class="to-btn" data-tabmove="${k}:1" ${k===arr.length-1?'disabled':''} aria-label="下へ">▼</button>
+        </div>`).join('');
     });
     const mixEl = sheet.querySelector('#mixPills');
     if (mixEl) mixEl.addEventListener('click', (e) => {
@@ -2227,9 +2120,18 @@
     try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
     try { const mp = localStorage.getItem('tsumiage-multipick'); if (mp !== null) state.multiPick = (mp === '1'); } catch (_) {}
     try { const mx = localStorage.getItem('tsumiage-mixaudio'); if (mx !== null) state.mixAudio = (mx === '1'); } catch (_) {}
+    try {
+      const to = JSON.parse(localStorage.getItem('tsumiage-taborder'));
+      if (Array.isArray(to)) {
+        // 保存値を検証し、欠けているタブは末尾に補う（アプリ更新でタブが増えても壊れない）
+        const valid = to.filter(x => DEFAULT_TAB_ORDER.includes(x));
+        const missing = DEFAULT_TAB_ORDER.filter(x => !valid.includes(x));
+        if (valid.length) state.tabOrder = [...new Set([...valid, ...missing])];
+      }
+    } catch (_) {}
+    renderTabbar();
     try { const le = parseInt(localStorage.getItem('tsumiage-lastexport'),10); if (!isNaN(le)) state.lastExport = le; } catch (_) {}
     if (!WEIGHT_STEPS.includes(state.weightStep)) state.weightStep = 2.5;
-    loadPlan();
     await openDB();
     await loadAll();
     await seedIfEmpty();
