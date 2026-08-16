@@ -97,13 +97,15 @@
   .set-no { width: 26px; height: 26px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
   .set-val .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
-  .set-rpe { margin-left: auto; font-size: 11px; font-weight: 700; color: #fff; background: var(--amber); padding: 3px 8px; border-radius: 7px; }
   .add-row { display: flex; align-items: stretch; gap: 8px; border-top: 1px solid var(--sep); margin-top: 2px; }
   .add-set { flex: 1; text-align: center; padding: 12px 4px; min-height: 46px; color: var(--amber); font-size: 13px; font-weight: 600; }
   .add-set .hint { color: var(--tertiary); font-weight: 500; }
   .repeat-set { flex-shrink: 0; padding: 8px 12px; min-height: 40px; margin: 5px 0; border-radius: 10px; background: var(--navy-soft); color: var(--navy); font-size: 13px; font-weight: 700; }
   .repeat-set:active { background: #d5deea; }
-  .add-ex { width: 100%; padding: 15px; background: var(--navy); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin-top: 4px; }
+  .add-ex { width: 100%; padding: 15px; background: var(--navy); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; }
+  /* 種目追加は常に画面下に出す（スクロール位置に関係なく押せる） */
+  .rec-footer { flex-shrink: 0; padding: 8px 14px 10px; background: rgba(242,242,247,0.94);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid var(--sep); }
   .empty { text-align: center; color: var(--secondary); font-size: 14px; padding: 40px 20px; line-height: 1.8; }
   .empty .em { font-size: 40px; display: block; margin-bottom: 8px; }
 
@@ -125,7 +127,6 @@
   .ex-card.done { box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 0 0 2px rgba(22,163,74,0.35); }
   .done-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--green); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
   .ex-target.ok { color: var(--green); background: rgba(22,163,74,0.1); }
-  .rpe-add { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--tertiary); border: 1px dashed var(--sep); padding: 4px 9px; border-radius: 7px; flex-shrink: 0; }
 
   /* 予定ボックス（メニュータブ内） */
   .plan-box { background: rgba(255,255,255,0.5); border-radius: 14px; padding: 2px 0 0; }
@@ -135,12 +136,57 @@
   .menu-plan:disabled { opacity: 0.4; }
 
   /* 最近使った重量 */
-  .step-pills.recent-w { margin-top: -6px; }
-  .step-pills.recent-w button { background: var(--navy-soft); color: var(--navy); border-color: transparent; }
 
   /* バックアップ促し */
   .backup-warn { background: var(--amber-soft); color: #92400e; border-radius: 12px; padding: 12px 14px; font-size: 13px; font-weight: 600; line-height: 1.6; margin-bottom: 16px; }
 
+
+
+
+  /* ---- 履歴タブ ---- */
+  .hist-card { background: #fff; border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+  .hist-head { display: flex; align-items: center; gap: 12px; padding: 14px; min-height: 64px; }
+  .hist-head:active { background: #f5f5f8; }
+  .hist-main { flex: 1; min-width: 0; }
+  .hist-name { font-size: 15px; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .hist-cat { font-size: 10px; font-weight: 600; color: var(--amber); background: var(--amber-soft); padding: 2px 7px; border-radius: 6px; }
+  .hist-date { font-size: 12px; color: var(--secondary); font-weight: 500; margin-top: 3px; }
+  .hist-latest { text-align: right; flex-shrink: 0; }
+  .hl-w { font-size: 20px; font-weight: 700; color: var(--navy); display: block; }
+  .hl-w .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
+  .hl-r { font-size: 11px; color: var(--secondary); font-weight: 600; }
+  .hist-card.open .hist-head { border-bottom: 1px solid var(--sep); }
+  .hist-detail { padding: 6px 14px 12px; }
+  .hd-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--sep); }
+  .hd-row:last-child { border-bottom: 0; }
+  .hd-d { font-size: 12px; color: var(--secondary); font-weight: 600; white-space: nowrap; }
+  .hd-s { font-size: 13px; color: var(--navy); font-weight: 600; text-align: right; line-height: 1.6; }
+
+  /* ---- セット入力シート（v3.11） ---- */
+  .field-box { background: #fff; border-radius: 16px; padding: 12px 12px 14px; margin-bottom: 12px; }
+  .fb-head { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; }
+  .fb-lbl { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .chip-row { display: flex; gap: 6px; }
+  .chip-row button { flex: 1; text-align: center; padding: 14px 0; min-height: 50px; border-radius: 11px;
+    font-size: 16px; font-weight: 700; background: var(--bg); color: var(--secondary); }
+  .chip-row button.on { background: var(--navy); color: #fff; }
+  .chip-row button:active { transform: scale(0.96); }
+  .chip-row.small { margin-top: 10px; align-items: center; }
+  .chip-row.small button { padding: 9px 0; min-height: 40px; font-size: 14px; }
+  .chip-row.small button.on { background: var(--amber); color: #fff; }
+  .chip-row.recent button { background: var(--navy-soft); color: var(--navy); }
+  .cr-lbl { font-size: 11px; font-weight: 700; color: var(--tertiary); width: 30px; flex-shrink: 0; }
+  .w-main { display: flex; align-items: center; gap: 10px; }
+  .w-pm { width: 58px; height: 58px; border-radius: 14px; background: var(--bg); color: var(--navy);
+    font-size: 26px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .w-pm:active { background: #e2e2e7; }
+  .w-val { flex: 1; display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+  .w-val .num-input { width: 100%; max-width: 120px; text-align: right; font-size: 32px; font-weight: 700;
+    color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
+  .w-val .num-input:focus { outline: none; }
+  .w-val .unit { font-size: 14px; color: var(--secondary); font-weight: 600; }
+  .reset-w { margin-left: auto; font-size: 12px; color: var(--amber); font-weight: 600; padding: 6px 8px; }
+  .sheet-save.big { padding: 18px; font-size: 17px; }
 
   /* ---- v3.4 UI改善 ---- */
   .settings-btn { flex-shrink: 0; }
@@ -276,26 +322,6 @@
     font-size: 16px; font-weight: 700; text-align: center;
   }
   .sheet .sub { text-align: center; font-size: 12px; color: var(--secondary); margin-top: 4px; margin-bottom: 16px; min-height: 16px; }
-  .stepper { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; }
-  .stepper .lbl { font-size: 15px; font-weight: 600; }
-  .reset-w { font-size: 12px; color: var(--amber); font-weight: 600; margin-left: 8px; padding: 2px 4px; }
-  .reset-w:active { opacity: 0.6; }
-  .stepper .ctrl { display: flex; align-items: center; gap: 10px; }
-  .stepper .pm { width: 44px; height: 44px; border-radius: 10px; background: var(--bg); color: var(--navy); font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-  .stepper .pm:active { background: #e2e2e7; }
-  .num-input { width: 78px; text-align: center; font-size: 21px; font-weight: 700; color: var(--navy); border: 0; background: transparent; padding: 4px 0; }
-  .num-input:focus { outline: none; }
-  .stepper .unit { font-size: 12px; color: var(--secondary); font-weight: 500; margin-left: -4px; }
-  .step-pills { display: flex; align-items: center; gap: 6px; margin: -2px 2px 14px; flex-wrap: wrap; }
-  .step-pills .sp-lbl { font-size: 12px; color: var(--secondary); font-weight: 600; margin-right: 2px; }
-  .step-pills button { padding: 11px 15px; min-height: 42px; border-radius: 9px; background: #fff; color: var(--secondary); font-size: 13px; font-weight: 600; border: 1px solid var(--sep); }
-  .step-pills button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
-  .rpe-box { background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 16px; }
-  .rpe-box .lbl { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .rpe-box .lbl .opt { font-size: 11px; color: var(--secondary); font-weight: 500; margin-left: 6px; }
-  .rpe-scale { display: flex; gap: 5px; margin-top: 10px; }
-  .rpe-scale button { flex: 1; text-align: center; padding: 13px 0; min-height: 46px; border-radius: 9px; font-size: 14px; font-weight: 700; background: var(--bg); color: var(--secondary); }
-  .rpe-scale button.on { background: var(--amber); color: #fff; }
   .sheet-save { width: 100%; padding: 15px; background: var(--amber); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; margin-top: 4px; }
   .sheet-del { width: 100%; padding: 13px; color: var(--red); font-size: 15px; font-weight: 600; text-align: center; margin-top: 6px; }
   .sheet-toggle { width: 100%; padding: 13px; color: var(--navy); font-size: 15px; font-weight: 600; text-align: center; margin-top: 6px; }
@@ -412,6 +438,9 @@
       </div>
       <div id="recBody"></div>
     </div>
+    <div class="rec-footer">
+      <button class="add-ex" id="addExToDay">＋ 種目を追加</button>
+    </div>
   </div>
 
   <!-- ===== 種目 ===== -->
@@ -426,6 +455,18 @@
     <div class="scroll" id="exBody"></div>
   </div>
 
+
+  <!-- ===== 履歴 ===== -->
+  <div id="histView" class="view">
+    <div class="navbar">
+      <div class="nav-side"></div>
+      <span class="title">履歴</span>
+      <div class="nav-side right"><button class="icon-btn settings-btn" aria-label="設定">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button></div>
+    </div>
+    <div class="scroll" id="histBody"></div>
+  </div>
 
   <!-- ===== メニュー ===== -->
   <div id="menuView" class="view">
@@ -454,6 +495,10 @@
     <button class="tab active" data-tab="rec">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
       <span>記録</span>
+    </button>
+    <button class="tab" data-tab="hist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+      <span>履歴</span>
     </button>
     <button class="tab" data-tab="menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8 4.5v9L12 20l-8-4.5v-9L12 2Z"/><path d="m4 7 8 4.5L20 7"/><path d="M12 20v-8.5"/></svg>
@@ -517,7 +562,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.10.0';
+  const APP_VERSION = '3.13.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -535,7 +580,7 @@
   const REP_CHOICES = [1, 2, 3, 4, 5, 10, 20];
   const state = {
     exercises: [],   // {id,name,category,isPreset,hidden,fav,order,createdAt,updatedAt}
-    workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,rpe}]}],updatedAt}
+    workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,at}]}],updatedAt}
     tab: 'rec',
     recDate: todayStr(),
     weightStep: 2.5,   // 重量の増減刻み（端末に記憶）
@@ -550,6 +595,7 @@
     multiPick: false,  // 種目選びで複数まとめて追加するか（端末に記憶）
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
+    histOpen: null,    // 履歴タブで展開中の種目ID
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
 
@@ -746,7 +792,6 @@
             <div class="set-row" data-editset="${ei}:${si}">
               <span class="set-no">${si+1}</span>
               <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
-              ${s.rpe ? `<span class="set-rpe">RPE ${s.rpe}</span>` : `<button class="rpe-add" data-rpeadd="${ei}:${si}">RPE＋</button>`}
             </div>
           </div>`;
         });
@@ -759,9 +804,8 @@
         </div></div>`;
       });
     } else {
-      html += `<div class="empty"><span class="em">🏋️</span>この日の記録はまだありません。<br>下のボタンから種目を追加しましょう。</div>`;
+      html += `<div class="empty"><span class="em">🏋️</span>この日の記録はまだありません。<br>下の「＋ 種目を追加」から始めましょう。</div>`;
     }
-    html += `<button class="add-ex" id="addExToDay">＋ 種目を追加</button>`;
     body.innerHTML = html;
   }
 
@@ -849,6 +893,85 @@
   // ===================== マイメニュー =====================
   const menuById = (id) => state.menus.find(m => m.id === id);
   function sortedMenus() { return state.menus.slice().sort((a,b) => (a.order||0) - (b.order||0)); }
+
+
+  // ---------- render: 履歴（種目ごとに最終実施を1行） ----------
+  // 種目ごとの「最後にやった日」と「その日の最後のセット」を集計
+  function lastByExercise() {
+    const map = new Map();   // exerciseId -> { date, set, setCount }
+    for (const w of state.workouts) {
+      for (const en of w.entries) {
+        if (!en.sets.length) continue;
+        const cur = map.get(en.exerciseId);
+        if (!cur || w.id > cur.date) {
+          map.set(en.exerciseId, { date: w.id, set: en.sets[en.sets.length-1], setCount: en.sets.length });
+        }
+      }
+    }
+    return [...map.entries()]
+      .filter(([id]) => exById(id))
+      .map(([id, v]) => ({ ex: exById(id), ...v }))
+      .sort((a,b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));  // 直近順
+  }
+
+  // 「8/3（月）」＋経過日数
+  function histDateLabel(dateStr) {
+    const d = parseYmd(dateStr);
+    const days = Math.round((parseYmd(todayStr()) - d) / 86400000);
+    const rel = days === 0 ? '今日' : (days === 1 ? '昨日' : `${days}日前`);
+    return `${fmtDate(dateStr)}・${rel}`;
+  }
+
+  function renderHist() {
+    const body = $('#histBody');
+    const rows = lastByExercise();
+    if (!rows.length) {
+      body.innerHTML = `<div class="empty"><span class="em">🕘</span>まだ記録がありません。<br>記録タブでトレを記録すると、ここに種目ごとの最新が並びます。</div>`;
+      return;
+    }
+    let html = `<div class="hint-note" style="margin-top:8px;">最後にやった順に並びます。タップで過去の記録が見られます。</div>`;
+    for (const r of rows) {
+      const open = state.histOpen === r.ex.id;
+      html += `<div class="hist-card ${open?'open':''}">
+        <div class="hist-head" data-histopen="${r.ex.id}">
+          <div class="hist-main">
+            <div class="hist-name">${esc(r.ex.name)}<span class="hist-cat">${r.ex.category}</span></div>
+            <div class="hist-date">${histDateLabel(r.date)}</div>
+          </div>
+          <div class="hist-latest">
+            <span class="hl-w">${fmtNum(r.set.w)}<span class="u">kg</span></span>
+            <span class="hl-r">${r.set.r}回 / ${r.setCount}セット</span>
+          </div>
+        </div>
+        ${open ? renderHistDetail(r.ex.id) : ''}
+      </div>`;
+    }
+    body.innerHTML = html;
+  }
+
+  // その種目の過去の記録（直近5日分）
+  function renderHistDetail(exId) {
+    const days = state.workouts
+      .filter(w => w.entries.some(en => en.exerciseId === exId && en.sets.length))
+      .sort((a,b) => a.id < b.id ? 1 : -1)
+      .slice(0, 5);
+    let html = '<div class="hist-detail">';
+    for (const w of days) {
+      const en = w.entries.find(x => x.exerciseId === exId);
+      const sets = en.sets.map(s => `${s.r}×${fmtNum(s.w)}kg`).join(' / ');
+      html += `<div class="hd-row"><span class="hd-d">${fmtDate(w.id)}</span><span class="hd-s">${sets}</span></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  $('#histBody').addEventListener('click', (e) => {
+    const h = e.target.closest('[data-histopen]');
+    if (!h) return;
+    const id = h.dataset.histopen;
+    state.histOpen = (state.histOpen === id) ? null : id;
+    renderHist();
+  });
 
   // ---------- render: メニュー一覧（＋次回の予定） ----------
   function renderMenu() {
@@ -1144,11 +1267,13 @@
     state.tab = tab;
     $$('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     $('#recView').classList.toggle('active', tab==='rec');
+    $('#histView').classList.toggle('active', tab==='hist');
     $('#menuView').classList.toggle('active', tab==='menu');
     $('#exView').classList.toggle('active', tab==='ex');
     if (state.editingMenu) { document.body.classList.remove('editing'); state.editingMenu = null; state.editingSnapshot = null; }
     $('#menuEditView').classList.remove('active');
     if (tab==='menu') renderMenu();
+    if (tab==='hist') renderHist();
     syncWakeLock();
   }
   $$('.tab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -1256,8 +1381,6 @@
     if (addEx) { openExercisePicker(); return; }
     const mv = e.target.closest('[data-moveex]');
     if (mv) { const [i,d] = mv.dataset.moveex.split(':').map(Number); moveEntry(i, d); return; }
-    const rpeAdd = e.target.closest('[data-rpeadd]');
-    if (rpeAdd) { const [ei,si] = rpeAdd.dataset.rpeadd.split(':').map(Number); openRpeSheet(ei, si); return; }
     const rep = e.target.closest('[data-repeatset]');
     if (rep) { repeatLastSet(parseInt(rep.dataset.repeatset,10)); return; }
     const addSet = e.target.closest('[data-addset]');
@@ -1287,50 +1410,17 @@
     renderRec();
   }
 
-  // 記録済みセットにRPEを後から付ける
-  function openRpeSheet(ei, si) {
-    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
-    const entry = w.entries[ei];
-    const s = entry.sets[si]; if (!s) return;
-    const ex = exById(entry.exerciseId);
-    let val = s.rpe || null;
-    const sheet = document.createElement('div');
-    sheet.className = 'sheet';
-    sheet.innerHTML = `
-      <div class="grabber"></div>
-      <h3>${esc(ex.name)}・${si+1}セット目</h3>
-      <div class="sub">${s.r}回 × ${fmtNum(s.w)}kg のきつさ</div>
-      <div class="rpe-box">
-        <div class="lbl">RPE<span class="opt">6=余裕 … 10=限界</span></div>
-        <div class="rpe-scale" id="rpeOnly">
-          ${[6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${val===n?'on':''}">${n}</button>`).join('')}
-        </div>
-      </div>
-      <button class="sheet-save" id="rpeSave">保存する</button>`;
-    openSheet(sheet);
-    sheet.querySelector('#rpeOnly').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-rpe]'); if (!b) return;
-      const n = parseInt(b.dataset.rpe,10);
-      val = (val === n) ? null : n;
-      sheet.querySelectorAll('#rpeOnly button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rpe,10)===val));
-    });
-    sheet.querySelector('#rpeSave').addEventListener('click', async () => {
-      s.rpe = val;
-      await saveWorkout(w);
-      closeSheet(); renderRec();
-    });
-  }
-
   // 直前セットと同じ内容でもう1セット記録
   async function repeatLastSet(ei) {
     const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
     const entry = w.entries[ei];
     const last = entry.sets[entry.sets.length-1]; if (!last) return;
-    entry.sets.push({ w: last.w, r: last.r, rpe: last.rpe || null, at: now() });
+    // 保存を待つ前にタイマーを開始（タップの流れを切らさないため）
+    if (state.recDate === todayStr()) startRest();
+    entry.sets.push({ w: last.w, r: last.r, at: now() });
     await saveWorkout(w);
     renderRec();
     const setNo = entry.sets.length;
-    if (state.recDate === todayStr()) startRest();
     toast(`${setNo}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`);
   }
 
@@ -1392,18 +1482,18 @@
       const last = entry.sets[entry.sets.length-1];
       const tgt = entry.target;
       const pv0 = prevSetFor(entry.exerciseId, state.recDate);
-      if (last) init = { w: last.w, r: last.r, rpe: null };
-      else if (tgt && (tgt.weight || tgt.reps)) init = { w: tgt.weight || (pv0 ? pv0.w : 20), r: tgt.reps || 3, rpe: null };
-      else if (pv0) init = { w: pv0.w, r: pv0.r, rpe: null };
-      else init = { w: 20, r: 3, rpe: null };
+      if (last) init = { w: last.w, r: last.r };
+      else if (tgt && (tgt.weight || tgt.reps)) init = { w: tgt.weight || (pv0 ? pv0.w : 20), r: tgt.reps || 3 };
+      else if (pv0) init = { w: pv0.w, r: pv0.r };
+      else init = { w: 20, r: 3 };
     }
-    let cur = { w: init.w, r: init.r || 3, rpe: init.rpe || null };
+    let cur = { w: init.w, r: init.r || 3 };
 
     const pv = prevSetFor(entry.exerciseId, state.recDate);
     const tgt = entry.target;
     const subText = (tgt && (tgt.weight || tgt.reps))
       ? `🎯 目標 ${tgt.weight ? fmtNum(tgt.weight)+'kg × ' : ''}${tgt.reps}回`
-      : (pv ? `前回のトレ: ${pv.r}回 × ${fmtNum(pv.w)}kg${pv.rpe?`（RPE ${pv.rpe}）`:''}` : 'はじめての記録');
+      : (pv ? `前回のトレ: ${pv.r}回 × ${fmtNum(pv.w)}kg` : 'はじめての記録');
     const recentW = recentWeights(entry.exerciseId);
 
     const sheet = document.createElement('div');
@@ -1412,36 +1502,32 @@
       <div class="grabber"></div>
       <h3><button class="sheet-star" id="sheetFav" aria-label="お気に入り">${ex.fav?STAR_ON:STAR_OFF}</button>${esc(ex.name)}・${setIndex+1}セット目</h3>
       <div class="sub">${subText}</div>
-      <div class="rpe-box">
-        <div class="lbl">回数</div>
-        <div class="rpe-scale" id="repScale">
+      <div class="field-box">
+        <div class="fb-head"><span class="fb-lbl">回数</span></div>
+        <div class="chip-row" id="repScale">
           ${REP_CHOICES.map(n=>`<button data-rep="${n}" class="${cur.r===n?'on':''}">${n}</button>`).join('')}
         </div>
       </div>
-      <div class="stepper">
-        <span class="lbl">重量 <button class="reset-w" id="resetW">↺ ${fmtNum(init.w)}kg</button></span>
-        <div class="ctrl">
-          <button class="pm" data-w="-1">−</button>
-          <input class="num-input" id="inW" inputmode="decimal" value="${fmtNum(cur.w)}">
-          <span class="unit">kg</span>
-          <button class="pm" data-w="1">＋</button>
+      <div class="field-box">
+        <div class="fb-head">
+          <span class="fb-lbl">重量</span>
+          <button class="reset-w" id="resetW">↺ ${fmtNum(init.w)}kg に戻す</button>
         </div>
-      </div>
-      <div class="step-pills" id="wStepPills">
-        <span class="sp-lbl">刻み</span>
-        ${WEIGHT_STEPS.map(s=>`<button data-step="${s}" class="${s===state.weightStep?'on':''}">${fmtNum(s)}kg</button>`).join('')}
-      </div>
-      ${recentW.length ? `<div class="step-pills recent-w" id="wRecent">
-        <span class="sp-lbl">最近</span>
-        ${recentW.map(v=>`<button data-wset="${v}">${fmtNum(v)}kg</button>`).join('')}
-      </div>` : ''}
-      <div class="rpe-box">
-        <div class="lbl">RPE<span class="opt">任意・きつさの主観（6〜10）</span></div>
-        <div class="rpe-scale" id="rpeScale">
-          ${[6,7,8,9,10].map(n=>`<button data-rpe="${n}" class="${cur.rpe===n?'on':''}">${n}</button>`).join('')}
+        <div class="w-main">
+          <button class="w-pm" data-w="-1">−</button>
+          <div class="w-val"><input class="num-input" id="inW" inputmode="decimal" value="${fmtNum(cur.w)}"><span class="unit">kg</span></div>
+          <button class="w-pm" data-w="1">＋</button>
         </div>
+        <div class="chip-row small" id="wStepPills">
+          <span class="cr-lbl">刻み</span>
+          ${WEIGHT_STEPS.map(s=>`<button data-step="${s}" class="${s===state.weightStep?'on':''}">${fmtNum(s)}</button>`).join('')}
+        </div>
+        ${recentW.length ? `<div class="chip-row small recent" id="wRecent">
+          <span class="cr-lbl">最近</span>
+          ${recentW.map(v=>`<button data-wset="${v}">${fmtNum(v)}</button>`).join('')}
+        </div>` : ''}
       </div>
-      <button class="sheet-save" id="setSave">${isNew?'このセットを記録':'更新する'}</button>
+      <button class="sheet-save big" id="setSave">${isNew?`このセットを記録` : '更新する'}</button>
       ${!isNew?`<button class="sheet-del" id="setDel">このセットを削除</button>`:''}
     `;
     openSheet(sheet);
@@ -1479,27 +1565,22 @@
       cur.r = parseInt(btn.dataset.rep,10);
       sheet.querySelectorAll('#repScale button').forEach(b => b.classList.toggle('on', parseInt(b.dataset.rep,10)===cur.r));
     });
-    sheet.querySelector('#rpeScale').addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-rpe]'); if (!btn) return;
-      const n = parseInt(btn.dataset.rpe,10);
-      cur.rpe = (cur.rpe === n) ? null : n; // 再タップで解除
-      sheet.querySelectorAll('#rpeScale button').forEach(b => b.classList.toggle('on', parseInt(b.dataset.rpe,10)===cur.rpe));
-    });
 
     sheet.querySelector('#setSave').addEventListener('click', async () => {
       const wv = Math.max(0, parseFloat(inW.value)||0);
       const rv = cur.r;
       if (!rv) { toast('回数を選んでください'); return; }
-      const setObj = { w: wv, r: rv, rpe: cur.rpe || null, at: isNew ? now() : (entry.sets[si]?.at || null) };
+      const setObj = { w: wv, r: rv, at: isNew ? now() : (entry.sets[si]?.at || null) };
       // 記録前の自己ベストと比較（今日の新規セットのみ祝う）
       const prevBest = bestWeight(entry.exerciseId);
+      const willRest = isNew && state.recDate === todayStr();
+      // iOSは「タップした流れの中で」しか再生を許さないため、
+      // 保存を待つ前にタイマー（＝音の再生）を始める
+      if (willRest) startRest();
       if (isNew) entry.sets.push(setObj); else entry.sets[si] = setObj;
       await saveWorkout(w);
       closeSheet(); renderRec();
-      if (isNew && state.recDate === todayStr()) {
-        startRest(); // タイマー開始
-        if (wv > 0 && wv > prevBest) prCelebrate(ex.name, wv);
-      }
+      if (willRest && wv > 0 && wv > prevBest) prCelebrate(ex.name, wv);
     });
     if (!isNew) sheet.querySelector('#setDel').addEventListener('click', async () => {
       const s = entry.sets[si];
@@ -1518,7 +1599,7 @@
   // ===================== レストタイマー =====================
   // iOS対策: 「無音+アラーム音」の音声を先に再生しておくことで、
   // アプリを閉じていても時間が来た瞬間に音で知らせる（PWAは予約通知ができないため）
-  let restAudio = null, restAudioUrl = null;
+  let restAudio = null, restAudioUrl = null, audioBlocked = false;
 
   function initAudio() {
     if (restAudio) { applyAudioSession(); bindAudioRecovery(); return; }
@@ -1538,6 +1619,13 @@
   // 以前はアプリを開いた最初のタップで無音を再生して許可を取っていたが、
   // それだけで再生中の音楽が止まってしまうため廃止。
   // 音を扱うのは「セットを記録してタイマーが始まる瞬間」だけにする。
+  // ただし再生を拒否された場合に限り、次のタップで鳴らし直す。
+  document.addEventListener('click', () => {
+    if (!audioBlocked) return;
+    audioBlocked = false;
+    const remain = state.restEndAt - Date.now();
+    if (remain > 0) scheduleRestSound(remain / 1000);
+  }, true);
 
   // 無音(silenceSec) + ビープ のWAVを生成
   // 鳴らせる音の種類（波形は数式で生成）
@@ -1666,7 +1754,11 @@
       restAudio.src = restAudioUrl;
       restAudio.currentTime = 0;
       const pr = restAudio.play();
-      if (pr && pr.catch) pr.catch(() => {});
+      if (pr && pr.catch) pr.catch(() => {
+        // iOSに再生を拒否された場合（タップの流れが切れた等）。
+        // 次に画面を触ったときに鳴らし直す。
+        audioBlocked = true;
+      });
     } catch (_) {}
   }
 
