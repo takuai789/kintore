@@ -137,6 +137,24 @@
 
 
 
+  /* ---- データ保護 ---- */
+  .protect-box { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .pb-row { display: flex; gap: 10px; align-items: flex-start; }
+  .pb-ic { font-size: 20px; flex-shrink: 0; }
+  .pb-txt { font-size: 13px; color: var(--ink); line-height: 1.65; }
+  .pb-sub { font-size: 11px; font-weight: 700; color: var(--secondary); margin: 14px 0 6px; }
+  .snap-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 2px;
+    border-top: 1px solid var(--sep); text-align: left; }
+  .sr-d { font-size: 13px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+  .sr-n { font-size: 12px; color: var(--secondary); flex: 1; }
+  .sr-go { font-size: 12px; font-weight: 700; color: var(--amber); flex-shrink: 0; }
+
+  /* ---- 手動タイマー ---- */
+  .timer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
+  .timer-grid button { padding: 22px 0; border-radius: 14px; background: #fff; color: var(--navy);
+    font-size: 18px; font-weight: 700; }
+  .timer-grid button:active { background: #eef1f6; }
+
   /* ---- タブ並べ替え ---- */
   .tab-order { background: #fff; border-radius: 14px; overflow: hidden; margin-bottom: 12px; }
   .to-row { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 0.5px solid var(--sep); }
@@ -407,7 +425,11 @@
   <!-- ===== 記録 ===== -->
   <div id="recView" class="view active">
     <div class="navbar">
-      <div class="nav-side"></div>
+      <div class="nav-side">
+        <button class="icon-btn" id="manualTimerBtn" aria-label="タイマーを開始">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2h6"/></svg>
+        </button>
+      </div>
       <span class="title">マッスル</span>
       <div class="nav-side right">
         <button class="icon-btn settings-btn" aria-label="設定">
@@ -512,8 +534,9 @@
 
   // ---------- IndexedDB ----------
   const DB_NAME = 'tsumiage-db';
-  const DB_VERSION = 2;
-  const STORES = ['exercises', 'workouts', 'menus'];
+  const SNAPSHOT_KEEP = 7;   // 自動バックアップの保持件数
+  const DB_VERSION = 3;
+  const STORES = ['exercises', 'workouts', 'menus', 'backups'];
   let _db = null;
   function openDB() {
     return new Promise((resolve, reject) => {
@@ -532,7 +555,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.15.0';
+  const APP_VERSION = '3.19.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -557,6 +580,7 @@
     restSec: 90,       // レストタイマー秒数（端末に記憶・0でオフ）
     restSound: 'beep', // 鳴らす音の種類（端末に記憶）
     restEndAt: 0,      // 実行中タイマーの終了時刻(ms)。0=停止
+    restExName: '',    // 休憩中の種目名（ロック画面表示用）
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
@@ -1248,9 +1272,10 @@
     renderRec();
   }
 
+  // 種目追加は固定フッター（#recBodyの外）にあるので個別に登録する
+  $('#addExToDay').addEventListener('click', () => openExercisePicker());
+
   $('#recBody').addEventListener('click', (e) => {
-    const addEx = e.target.closest('#addExToDay');
-    if (addEx) { openExercisePicker(); return; }
     const mv = e.target.closest('[data-moveex]');
     if (mv) { const [i,d] = mv.dataset.moveex.split(':').map(Number); moveEntry(i, d); return; }
     const rep = e.target.closest('[data-repeatset]');
@@ -1288,7 +1313,8 @@
     const entry = w.entries[ei];
     const last = entry.sets[entry.sets.length-1]; if (!last) return;
     // 保存を待つ前にタイマーを開始（タップの流れを切らさないため）
-    if (state.recDate === todayStr()) startRest();
+    const exName = (exById(entry.exerciseId)||{}).name || '';
+    if (state.recDate === todayStr()) startRest(exName);
     entry.sets.push({ w: last.w, r: last.r, at: now() });
     await saveWorkout(w);
     renderRec();
@@ -1448,7 +1474,7 @@
       const willRest = isNew && state.recDate === todayStr();
       // iOSは「タップした流れの中で」しか再生を許さないため、
       // 保存を待つ前にタイマー（＝音の再生）を始める
-      if (willRest) startRest();
+      if (willRest) startRest(ex.name);
       if (isNew) entry.sets.push(setObj); else entry.sets[si] = setObj;
       await saveWorkout(w);
       closeSheet(); renderRec();
@@ -1669,18 +1695,110 @@
 
   let restTick = null;
   let restTotalMs = 0;
-  function startRest() {
+  function startRest(exName) {
     if (!state.restSec) return; // 0=オフ
     restTotalMs = state.restSec * 1000;
     state.restEndAt = Date.now() + restTotalMs;
+    state.restExName = exName || '';
     scheduleRestSound(state.restSec);
     ensureRestBar();
+    setupMediaSession();
     if (restTick) clearInterval(restTick);
     restTick = setInterval(updateRestBar, 250);
     updateRestBar();
   }
+
+  // ---------- 手動でタイマーを開始 ----------
+  // セット記録とは無関係に使える（ストレッチ、有酸素、記録し忘れなど）
+  const MANUAL_TIMES = [30, 60, 90, 120, 180, 300];
+  function openTimerSheet() {
+    // 動作中なら止めるだけ
+    if (state.restEndAt) {
+      if (confirm('タイマーが動いています。止めますか？')) stopRest(false);
+      return;
+    }
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <div class="grabber"></div>
+      <h3>タイマーを開始</h3>
+      <div class="sub">記録とは関係なく使えます</div>
+      <div class="timer-grid" id="timerGrid">
+        ${MANUAL_TIMES.map(sec => `<button data-tsec="${sec}">${sec % 60 === 0 ? (sec/60)+'分' : sec+'秒'}</button>`).join('')}
+      </div>`;
+    openSheet(sheet);
+    sheet.querySelector('#timerGrid').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tsec]'); if (!b) return;
+      const sec = parseInt(b.dataset.tsec, 10);
+      closeSheet();
+      startRestFor(sec, '');   // タップの流れの中で開始（iOSの音の制約対策）
+    });
+  }
+  // 指定秒でタイマーを開始（設定値を一時的に上書き）
+  function startRestFor(sec, exName) {
+    const keep = state.restSec;
+    state.restSec = sec;
+    startRest(exName);
+    state.restSec = keep;      // 設定そのものは変えない
+    restTotalMs = sec * 1000;
+  }
+  $('#manualTimerBtn').addEventListener('click', openTimerSheet);
+
+  // ---------- ロック画面の表示（Media Session） ----------
+  // 再生中はロック画面に出るので、そこに種目名と残り時間を出し、
+  // 一時停止ボタンを「スキップ」として使えるようにする。
+  // ジャケットをタップするとアプリが開く。
+  function setupMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: state.restExName ? `休憩中 — ${state.restExName}` : '休憩中',
+        artist: 'タップでマッスルを開く',
+        album: 'マッスル',
+        artwork: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+        ],
+      });
+      navigator.mediaSession.playbackState = 'playing';
+      // 一時停止＝休憩スキップ
+      navigator.mediaSession.setActionHandler('pause', () => stopRest(false));
+      navigator.mediaSession.setActionHandler('play', () => {});
+      // 早送り／巻き戻しを ±30秒 に
+      navigator.mediaSession.setActionHandler('seekforward', () => extendRest(-30));
+      navigator.mediaSession.setActionHandler('seekbackward', () => extendRest(30));
+      navigator.mediaSession.setActionHandler('nexttrack', () => stopRest(false));
+      navigator.mediaSession.setActionHandler('previoustrack', () => extendRest(30));
+    } catch (_) {}
+  }
+  function updateMediaSessionTime() {
+    if (!('mediaSession' in navigator)) return;
+    const remain = state.restEndAt - Date.now();
+    if (remain <= 0) return;
+    try {
+      if (navigator.mediaSession.setPositionState) {
+        navigator.mediaSession.setPositionState({
+          duration: restTotalMs / 1000,
+          playbackRate: 1,
+          position: Math.max(0, (restTotalMs - remain) / 1000),
+        });
+      }
+    } catch (_) {}
+  }
+  function clearMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = 'none';
+      navigator.mediaSession.metadata = null;
+      for (const a of ['pause','play','seekforward','seekbackward','nexttrack','previoustrack']) {
+        navigator.mediaSession.setActionHandler(a, null);
+      }
+    } catch (_) {}
+  }
   function stopRest(finished) {
     state.restEndAt = 0;
+    state.restExName = '';
+    clearMediaSession();
     if (restTick) { clearInterval(restTick); restTick = null; }
     if (finished) {
       // 鳴り終わるのを待ってから解放（メディア再生の表示を残さない）
@@ -1697,11 +1815,14 @@
   }
   function extendRest(sec) {
     if (!state.restEndAt) return;
+    // 短縮で残りが尽きたら、その場で終了扱いにする
+    if (state.restEndAt + sec * 1000 <= Date.now()) { stopRest(true); return; }
     state.restEndAt += sec * 1000;
-    restTotalMs += sec * 1000;
+    restTotalMs = Math.max(1000, restTotalMs + sec * 1000);
     const remainSec = Math.max(0, (state.restEndAt - Date.now()) / 1000);
     scheduleRestSound(remainSec); // 予約音を鳴り直し
     updateRestBar();
+    updateMediaSessionTime();
   }
   function ensureRestBar() {
     if ($('#restBar')) return;
@@ -1726,7 +1847,7 @@
     const remain = state.restEndAt - Date.now();
     if (remain <= 0) { stopRest(true); return; }
     // 約2秒に1回、予約音が生きているか確認
-    if (++soundCheckTick % 8 === 0) ensureRestSoundAlive();
+    if (++soundCheckTick % 8 === 0) { ensureRestSoundAlive(); updateMediaSessionTime(); }
     const t = $('#restTime'); const f = $('#restFill');
     if (t) {
       const s = Math.ceil(remain / 1000);
@@ -1940,11 +2061,13 @@
 
   // ---------- 設定シート ----------
   $$('.settings-btn').forEach(b => b.addEventListener('click', openSettings));
-  function openSettings() {
+  async function openSettings() {
     const totalWorkouts = state.workouts.length;
     const totalSets = state.workouts.reduce((t,w)=> t + w.entries.reduce((a,e)=>a+e.sets.length,0), 0);
     // 30日以上書き出していない & 記録が貯まっているなら促す
     const days = state.lastExport ? Math.floor((Date.now()-state.lastExport)/86400000) : null;
+    const st = await storageStatus();
+    const snaps = (await getAll('backups')).sort((a,b) => a.id < b.id ? 1 : -1);
     const backupNote = (totalWorkouts >= 3 && (days === null || days >= 30))
       ? `<div class="backup-warn">💾 ${days === null ? 'まだ一度もバックアップしていません' : `前回のバックアップから${days}日経過`}。下の「データを書き出す」で保存できます。</div>`
       : '';
@@ -1990,6 +2113,28 @@
         </div>`).join('')}</div>
       <div class="set-note">上にあるものほど左に並びます。</div>
       ${backupNote}
+      <div class="sect-label">データの保護</div>
+      <div class="protect-box">
+        <div class="pb-row">
+          <span class="pb-ic">${st.persisted === true ? '🛡️' : '⚠️'}</span>
+          <span class="pb-txt">${st.persisted === true
+            ? 'この端末では、記録が自動で削除されない設定になっています。'
+            : 'OSの空き容量が不足すると記録が消える可能性があります。ホーム画面に追加して使うと保護されやすくなります。'}</span>
+        </div>
+        ${snaps.length ? `<div class="pb-snaps">
+          <div class="pb-sub">自動バックアップ（1日1回・最新${SNAPSHOT_KEEP}件）</div>
+          ${snaps.map(b => {
+            const d = b.data || {};
+            const sets = (d.workouts||[]).reduce((t,w)=> t + w.entries.reduce((a,e)=>a+e.sets.length,0), 0);
+            return `<button class="snap-row" data-restore="${b.id}">
+              <span class="sr-d">${fmtDate(b.id)}</span>
+              <span class="sr-n">${(d.workouts||[]).length}日分・${sets}セット</span>
+              <span class="sr-go">復元</span>
+            </button>`;
+          }).join('')}
+        </div>` : '<div class="pb-sub">記録するとここに自動バックアップが貯まります。</div>'}
+      </div>
+      <div class="set-note">自動バックアップはアプリの中に保存されます。端末の紛失や機種変更にも備えるなら、下の「データを書き出す」でファイルとして残してください。</div>
       <div class="set-group">
         <button class="set-item" id="btnExport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
@@ -2021,6 +2166,10 @@
       try { localStorage.setItem('tsumiage-sound', state.restSound); } catch (_) {}
       soundEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.sound===state.restSound));
       previewSound(state.restSound); // その場で試聴
+    });
+    sheet.addEventListener('click', (e) => {
+      const r = e.target.closest('[data-restore]');
+      if (r) restoreSnapshot(r.dataset.restore);
     });
     const orderEl = sheet.querySelector('#tabOrderList');
     if (orderEl) orderEl.addEventListener('click', (e) => {
@@ -2137,7 +2286,108 @@
     await seedIfEmpty();
     renderAll();
     syncWakeLock();
+    handleLaunchParams();
+    requestPersistence();   // OSにデータを消させない
+    autoSnapshot();         // 1日1回のバックアップ
   })();
+
+  // ===================== データ保全 =====================
+  // ① OSにデータを消させない（iOSのストレージ整理対策の本命）
+  async function requestPersistence() {
+    try {
+      if (!navigator.storage || !navigator.storage.persist) return null;
+      if (await navigator.storage.persisted()) return true;
+      return await navigator.storage.persist();
+    } catch (_) { return null; }
+  }
+  async function storageStatus() {
+    try {
+      const persisted = navigator.storage?.persisted ? await navigator.storage.persisted() : null;
+      const est = navigator.storage?.estimate ? await navigator.storage.estimate() : null;
+      return { persisted, usage: est?.usage || 0 };
+    } catch (_) { return { persisted: null, usage: 0 }; }
+  }
+
+  // ② アプリ内に自動スナップショット（1日1回・最新7件を保持）
+  //    誤操作や取り込み失敗から戻せる。OSがまるごと消した場合は別途の書き出しが要る。
+  async function autoSnapshot() {
+    try {
+      const today = todayStr();
+      const all = await getAll('backups');
+      if (all.some(b => b.id === today)) return;         // 今日は取得済み
+      if (!state.workouts.length) return;                // 記録が無いうちは不要
+      await put('backups', {
+        id: today, at: now(),
+        data: { schema: SCHEMA, exercises: state.exercises, workouts: state.workouts, menus: state.menus },
+      });
+      // 古いものを削除
+      const rest = (await getAll('backups')).sort((a,b) => a.id < b.id ? 1 : -1);
+      for (const b of rest.slice(SNAPSHOT_KEEP)) await del('backups', b.id);
+    } catch (_) {}
+  }
+  // スナップショットから復元
+  async function restoreSnapshot(id) {
+    const all = await getAll('backups');
+    const b = all.find(x => x.id === id); if (!b) return;
+    const d = b.data;
+    const sets = (d.workouts||[]).reduce((t,w)=> t + w.entries.reduce((a,e)=>a+e.sets.length,0), 0);
+    if (!confirm(`${fmtDate(b.id)}の状態に戻します。\n（記録 ${(d.workouts||[]).length}日分・${sets}セット）\n今のデータは上書きされます。よろしいですか？`)) return;
+    for (const st of ['exercises','workouts','menus']) {
+      const cur = await getAll(st);
+      for (const it of cur) await del(st, it.id);
+      for (const it of (d[st]||[])) await put(st, it);
+    }
+    await loadAll();
+    closeSheet(); renderAll();
+    toast('復元しました');
+  }
+
+  // ---------- 起動オプション（ショートカット/NFC連携） ----------
+  // 例）  ?tab=hist        履歴タブを開く
+  //       ?timer=120       2分タイマーを開始（音の許可のため、開始ボタンを一度押す形にする）
+  //       ?menu=胸の日     その名前のメニューを今日の記録に入れる
+  function handleLaunchParams() {
+    let params;
+    try { params = new URLSearchParams(location.search); } catch (_) { return; }
+    if (![...params.keys()].length) return;
+
+    // タブ指定
+    const tab = params.get('tab');
+    if (tab && DEFAULT_TAB_ORDER.includes(tab)) switchTab(tab);
+
+    // メニュー展開（名前の部分一致）
+    const mname = params.get('menu');
+    if (mname) {
+      const m = state.menus.find(x => x.name === mname)
+             || state.menus.find(x => x.name.includes(mname));
+      if (m) applyMenuToday(m.id);
+      else toast(`メニュー「${mname}」が見つかりません`);
+    }
+
+    // タイマー指定。iOSは画面を触った流れでないと音を鳴らせないので、
+    // 自動では始めず「開始」ボタンを出す（1タップで走り出す）
+    const tsec = parseInt(params.get('timer'), 10);
+    if (!isNaN(tsec) && tsec > 0 && tsec <= 3600) showLaunchTimer(tsec);
+
+    // アドレスバーにパラメータを残さない（再読込で再実行されないように）
+    try { history.replaceState(null, '', location.pathname); } catch (_) {}
+  }
+
+  function showLaunchTimer(sec) {
+    const label = sec % 60 === 0 ? `${sec/60}分` : `${sec}秒`;
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <div class="grabber"></div>
+      <h3>${label}タイマー</h3>
+      <div class="sub">タップで開始します</div>
+      <button class="sheet-save big" id="launchStart">${label}で開始する</button>`;
+    openSheet(sheet);
+    sheet.querySelector('#launchStart').addEventListener('click', () => {
+      closeSheet();
+      startRestFor(sec, '');
+    });
+  }
 
   // ---------- visualViewport ----------
   function setupViewportTracking() {
