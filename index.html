@@ -555,7 +555,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.19.0';
+  const APP_VERSION = '3.19.1';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -1752,8 +1752,8 @@
     if (!('mediaSession' in navigator)) return;
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: state.restExName ? `休憩中 — ${state.restExName}` : '休憩中',
-        artist: 'タップでマッスルを開く',
+        title: state.restExName ? `休憩中 — ${state.restExName}` : '休憩中（マッスル）',
+        artist: '⏸ で終了 ／ ⏪ で+30秒',
         album: 'マッスル',
         artwork: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
