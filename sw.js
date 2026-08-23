@@ -1,7 +1,7 @@
 // つみあげ Service Worker（自動アップデート対応）
 // HTML本体はネットワーク優先、静的アセットはキャッシュ優先。
 // リリース時は index.html の APP_VERSION と CACHE をセットで上げる。
-const CACHE = 'tsumiage-v3-19-0';
+const CACHE = 'tsumiage-v3-19-1';
 const ASSETS = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', (e) => {
