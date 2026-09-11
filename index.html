@@ -72,10 +72,10 @@
     color: var(--navy);
   }
 
-  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 14px 24px; }
+  .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 8px 14px 16px; }
 
   /* ---- date nav (record) ---- */
-  .datenav { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 0 12px; }
+  .datenav { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 2px 0 8px; }
   .datenav .arrow { width: 40px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--navy); font-size: 20px; }
   .datenav .arrow:disabled { color: var(--tertiary); }
   .datechip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--sep); border-radius: 999px; padding: 7px 16px; font-size: 14px; font-weight: 600; color: var(--navy); }
@@ -90,6 +90,18 @@
   .set-row { display: flex; align-items: center; gap: 10px; padding: 13px 2px; min-height: 48px; border-top: 1px solid var(--sep);
     position: relative; background: #fff; transition: transform 0.2s cubic-bezier(.32,.72,0,1); will-change: transform; }
   .set-swipe { position: relative; overflow: hidden; }
+  .set-swipe:last-of-type .set-row { padding-bottom: 15px; }
+  /* 編集が開くのは文字のある左側だけ。右側は触っても反応しない */
+  .set-tap { display: flex; align-items: center; gap: 10px; flex: 0 1 auto; min-width: 0;
+    padding: 2px 8px 2px 0; margin: -2px 0; }
+  .set-dead { flex: 1; min-width: 44px; align-self: stretch; }
+  /* タップ領域の可視化（設定でオンにしたときだけ） */
+  body.show-tap .set-tap { background: var(--amber-soft); outline: 1px solid rgba(245,158,11,0.45); border-radius: 8px; }
+  body.show-tap .repeat-set { outline: 1px solid rgba(245,158,11,0.45); }
+  body.show-tap .add-set { background: var(--amber-soft); border-radius: 8px; }
+  body.show-tap .ex-head { background: var(--amber-soft); border-radius: 8px; }
+  body.show-tap .ord-btn, body.show-tap .ex-del { background: rgba(245,158,11,0.18); border-radius: 8px; }
+  body.show-tap .fold-summary { outline: 1px solid rgba(245,158,11,0.45); }
   .swipe-del { position: absolute; right: 0; top: 0; bottom: 0; width: 92px;
     background: var(--red); color: #fff; font-size: 15px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; }
@@ -97,21 +109,34 @@
   .set-no { width: 26px; height: 26px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .set-val { font-size: 15px; font-weight: 600; color: var(--ink); }
   .set-val .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
-  .add-row { display: flex; align-items: stretch; gap: 8px; border-top: 1px solid var(--sep); margin-top: 2px; }
+  /* セット行と隣接して誤タップしないよう、上に余白を空ける */
+  .add-row { display: flex; align-items: stretch; gap: 8px; border-top: 1px solid var(--sep); margin-top: 12px; padding-top: 4px; }
   .add-set { flex: 1; text-align: center; padding: 12px 4px; min-height: 46px; color: var(--amber); font-size: 13px; font-weight: 600; }
-  .add-set .hint { color: var(--tertiary); font-weight: 500; }
-  .repeat-set { flex-shrink: 0; padding: 8px 12px; min-height: 40px; margin: 5px 0; border-radius: 10px; background: var(--navy-soft); color: var(--navy); font-size: 13px; font-weight: 700; }
+  .repeat-set { flex-shrink: 0; padding: 12px 14px; min-height: 48px; margin: 4px 0 2px; border-radius: 11px; background: var(--navy-soft); color: var(--navy); font-size: 13px; font-weight: 700; }
   .repeat-set:active { background: #d5deea; }
-  .add-ex { width: 100%; padding: 15px; background: var(--navy); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; }
+  /* 1セット目（前回の値）は控えめな色で区別 */
+  .repeat-set.prev { background: var(--bg); color: var(--secondary); outline: 1px solid var(--sep); }
+  .repeat-set.prev::before { content: '前回 '; font-size: 11px; color: var(--tertiary); }
+  .add-ex { width: 100%; padding: 12px; background: var(--navy); color: #fff; border-radius: 14px; font-size: 16px; font-weight: 700; text-align: center; }
   /* 種目追加は常に画面下に出す（スクロール位置に関係なく押せる） */
-  .rec-footer { flex-shrink: 0; padding: 8px 14px 10px; background: rgba(242,242,247,0.94);
+  .quick-repeat { width: 100%; display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; margin-bottom: 8px; border-radius: 14px;
+    background: #dcf5e3; color: #14532d; text-align: left;
+    box-shadow: 0 2px 8px rgba(22,163,74,0.18); border: 1px solid rgba(22,163,74,0.28); }
+  .quick-repeat:active { background: #c8edd3; }
+  .quick-repeat[hidden] { display: none; }
+  .qr-ic { font-size: 22px; flex-shrink: 0; }
+  .qr-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .qr-name { font-size: 15px; font-weight: 700; }
+  .qr-set { font-size: 12px; font-weight: 600; color: #35704a; }
+  .rec-footer { flex-shrink: 0; padding: 6px 14px 6px; background: rgba(242,242,247,0.94);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid var(--sep); }
   .empty { text-align: center; color: var(--secondary); font-size: 14px; padding: 40px 20px; line-height: 1.8; }
   .empty .em { font-size: 40px; display: block; margin-bottom: 8px; }
 
   /* ---- tabbar ---- */
   .tabbar { display: flex; border-top: 0.5px solid var(--sep); background: rgba(255,255,255,0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); flex-shrink: 0; padding-bottom: var(--safe-bottom); }
-  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 5px; font-size: 10px; color: var(--secondary); font-weight: 600; }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 0 4px; font-size: 10px; color: var(--secondary); font-weight: 600; }
   .tab.active { color: var(--navy); }
   .tab svg { width: 24px; height: 24px; }
 
@@ -119,11 +144,23 @@
 
   /* 折りたたみ・並べ替え・達成 */
   .ex-head { cursor: pointer; }
-  .fold-ic { color: var(--tertiary); font-size: 13px; width: 14px; flex-shrink: 0; }
+  .fold-btn { width: 30px; height: 30px; border-radius: 50%; background: var(--bg); color: var(--navy);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: -2px;
+    transition: transform 0.22s ease; }
+  .fold-btn svg { width: 16px; height: 16px; }
+  .fold-btn.is-folded { transform: rotate(-90deg); }
+  .ex-head:active .fold-btn { background: #e2e2e7; }
   .ex-sp { margin-left: auto; }
   .ord-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: var(--navy); font-size: 12px; font-weight: 700; flex-shrink: 0; }
   .ord-btn:disabled { color: var(--tertiary); opacity: 0.35; }
-  .fold-summary { padding: 8px 2px 10px; font-size: 13px; color: var(--secondary); font-weight: 600; }
+  .ord-gap { width: 38px; flex-shrink: 0; }  /* 矢印が無い時も位置を揃える */
+  .fold-summary { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 2px 0 6px;
+    background: var(--bg); border-radius: 10px; font-size: 13px; color: var(--secondary); font-weight: 600; }
+  .fold-summary:active { background: #e6e6eb; }
+  .fs-txt { flex: 1; min-width: 0; }
+  .fs-more { font-size: 12px; font-weight: 700; color: var(--amber); flex-shrink: 0; }
+  /* 畳んだカードは少し詰めて、一覧性を上げる */
+  .ex-card.folded { padding-bottom: 4px; }
   .ex-card.done { box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 0 0 2px rgba(22,163,74,0.35); }
   .done-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--green); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
   .ex-target.ok { color: var(--green); background: rgba(22,163,74,0.1); }
@@ -136,6 +173,14 @@
 
 
 
+
+  /* ---- その日の合計 ---- */
+  .day-sum { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 12px;
+    padding: 11px 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  .ds-item { font-size: 13px; color: var(--secondary); font-weight: 600; }
+  .ds-item b { font-size: 17px; color: var(--navy); font-weight: 700; margin-right: 2px; }
+  .ds-item.time { margin-left: auto; text-align: right; }
+  .ds-range { display: block; font-size: 11px; color: var(--tertiary); font-weight: 500; margin-top: 1px; }
 
   /* ---- データ保護 ---- */
   .protect-box { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
@@ -177,6 +222,11 @@
   .hl-w .u { font-size: 12px; color: var(--secondary); font-weight: 500; }
   .hl-r { font-size: 11px; color: var(--secondary); font-weight: 600; }
   .hist-card.open .hist-head { border-bottom: 1px solid var(--sep); }
+  .hist-actions { padding: 0 14px 12px; }
+  .hist-add { width: 100%; padding: 11px; border-radius: 10px; background: var(--navy-soft);
+    color: var(--navy); font-size: 13px; font-weight: 700; }
+  .hist-add:active { background: #d5deea; }
+  .hist-add.added { background: var(--bg); color: var(--tertiary); }
   .hist-detail { padding: 6px 14px 12px; }
   .hd-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--sep); }
   .hd-row:last-child { border-bottom: 0; }
@@ -305,9 +355,12 @@
     max-height: 92%; overflow-y: auto;
   }
   /* 休憩タイマー表示中は、シートがバーの下に隠れないよう上を空ける */
-  body.rest-on .sheet { max-height: calc(92% - 72px); }
+  body.rest-on .sheet { max-height: calc(92% - 48px); }
   /* タイマーのバーがナビバー（設定ボタン等）を覆わないよう、本体を下げる */
-  body.rest-on #app { padding-top: calc(var(--safe-top) + 62px); }
+  /* タイマー中もナビバーの高さのままにする（二段にしない） */
+  body.rest-on #app { padding-top: var(--safe-top); }
+  body.rest-on .navbar .title { opacity: 0; }
+  body.rest-on .navbar .nav-side:not(.right) { opacity: 0; pointer-events: none; }
   /* メニュー編集中はタブバーを隠し、モーダルであることを明示 */
   body.editing .tabbar { display: none; }
   .sheet.show { transform: translateY(0); }
@@ -375,7 +428,7 @@
 
   /* ---- rest timer ---- */
   #restBar {
-    position: fixed; left: 10px; right: 10px; top: calc(var(--safe-top) + 6px); z-index: 800;
+    position: fixed; left: 8px; right: 52px; top: calc(var(--safe-top) + 4px); z-index: 800;
     background: var(--navy); border-radius: 14px; overflow: hidden;
     box-shadow: 0 8px 24px rgba(30,58,95,0.4);
     transform: translateY(-140%); transition: transform 0.3s cubic-bezier(.32,.72,0,1);
@@ -383,10 +436,10 @@
   #restBar:not(.show) { pointer-events: none; }
   #restBar.show { transform: translateY(0); }
   #restBar .rest-fill { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--amber); transition: width 0.25s linear; }
-  #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px; }
-  #restBar .rest-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
-  #restBar .rest-time { font-size: 22px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; min-width: 64px; }
-  #restBar .rest-btn { margin-left: auto; padding: 10px 14px; min-height: 42px; border-radius: 10px; background: rgba(255,255,255,0.16); color: #fff; font-size: 13px; font-weight: 700; }
+  #restBar .rest-inner { position: relative; display: flex; align-items: center; gap: 6px; padding: 5px 6px 7px 12px; }
+  #restBar .rest-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.75); }
+  #restBar .rest-time { font-size: 19px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; min-width: 52px; }
+  #restBar .rest-btn { margin-left: auto; padding: 7px 10px; min-height: 34px; border-radius: 9px; background: rgba(255,255,255,0.16); color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
   #restBar .rest-btn.skip { margin-left: 0; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); }
   #restFlash {
     position: fixed; inset: 0; z-index: 950; background: rgba(245,158,11,0.92);
@@ -448,6 +501,7 @@
       <div id="recBody"></div>
     </div>
     <div class="rec-footer">
+      <button class="quick-repeat" id="quickRepeat" hidden></button>
       <button class="add-ex" id="addExToDay">＋ 種目を追加</button>
     </div>
   </div>
@@ -555,7 +609,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.19.1';
+  const APP_VERSION = '3.26.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -586,6 +640,7 @@
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
     keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
     multiPick: false,  // 種目選びで複数まとめて追加するか（端末に記憶）
+    showTap: false,    // タップできる場所に色を付ける（確認用）
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     histOpen: null,    // 履歴タブで展開中の種目ID
@@ -751,6 +806,17 @@
     const w = workoutByDate(date);
     const body = $('#recBody');
     let html = '';
+    // その日の合計（種目数・セット数・活動時間）
+    const sum = daySummary(w);
+    if (sum) {
+      html += `<div class="day-sum">
+        <span class="ds-item"><b>${sum.exCount}</b>種目</span>
+        <span class="ds-item"><b>${sum.setCount}</b>セット</span>
+        ${sum.span && sum.span.min > 0
+          ? `<span class="ds-item time"><b>${fmtDuration(sum.span.min)}</b><span class="ds-range">${fmtTime(sum.span.first)}→${fmtTime(sum.span.last)}</span></span>`
+          : ''}
+      </div>`;
+    }
     if (w && w.entries.length) {
       const total = w.entries.length;
       w.entries.forEach((en, ei) => {
@@ -765,19 +831,28 @@
           : 'まだ記録なし';
         html += `<div class="ex-card ${done?'done':''} ${folded?'folded':''}">
           <div class="ex-head" data-toggle="${en.exerciseId}">
-            <span class="fold-ic">${folded?'▸':'▾'}</span>
+            <span class="fold-btn ${folded?'is-folded':''}" aria-label="${folded?'ひらく':'とじる'}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
             <span class="ex-name">${esc(ex.name)}</span>
             <span class="ex-cat">${ex.category}</span>
             ${done?'<span class="done-badge">達成</span>':''}
             <span class="ex-sp"></span>
-            <button class="ord-btn" data-moveex="${ei}:-1" ${ei===0?'disabled':''} aria-label="上へ">▲</button>
-            <button class="ord-btn" data-moveex="${ei}:1" ${ei===total-1?'disabled':''} aria-label="下へ">▼</button>
+            ${total > 1 ? (ei > 0
+              ? `<button class="ord-btn" data-moveex="${ei}:-1" aria-label="上へ">▲</button>`
+              : `<span class="ord-gap"></span>`) : ''}
+            ${total > 1 ? (ei < total-1
+              ? `<button class="ord-btn" data-moveex="${ei}:1" aria-label="下へ">▼</button>`
+              : `<span class="ord-gap"></span>`) : ''}
             <button class="ex-del" data-delex="${ei}" aria-label="種目を削除">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
             </button>
           </div>`;
         if (folded) {
-          html += `<div class="fold-summary" data-toggle="${en.exerciseId}">${summary}</div></div>`;
+          html += `<div class="fold-summary" data-toggle="${en.exerciseId}">
+            <span class="fs-txt">${summary}</span>
+            <span class="fs-more">ひらく</span>
+          </div></div>`;
           return;
         }
         const tr = timeRange(en.sets);
@@ -788,24 +863,31 @@
         en.sets.forEach((s, si) => {
           html += `<div class="set-swipe">
             <button class="swipe-del" data-swipedel="${ei}:${si}">削除</button>
-            <div class="set-row" data-editset="${ei}:${si}">
-              <span class="set-no">${si+1}</span>
-              <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
+            <div class="set-row">
+              <div class="set-tap" data-editset="${ei}:${si}">
+                <span class="set-no">${si+1}</span>
+                <span class="set-val">${s.r}<span class="u">回</span> × ${fmtNum(s.w)}<span class="u">kg</span></span>
+              </div>
+              <div class="set-dead"></div>
             </div>
           </div>`;
         });
         const pv = en.sets.length ? null : prevSetFor(en.exerciseId, date);
-        const hint = pv ? ` <span class="hint">前回 ${pv.r}回 × ${fmtNum(pv.w)}kg</span>` : '';
         const last = en.sets[en.sets.length-1];
+        // 2セット目以降は今日の直前セット、1セット目は前回のトレの値をリピートできる
+        const quick = last
+          ? `<button class="repeat-set" data-repeatset="${ei}" aria-label="同じ内容でもう1セット">🔁 ${last.r}×${fmtNum(last.w)}kg</button>`
+          : (pv ? `<button class="repeat-set prev" data-prevrepeat="${ei}" aria-label="前回と同じ内容で記録">🔁 ${pv.r}×${fmtNum(pv.w)}kg</button>` : '');
         html += `<div class="add-row">
-          <button class="add-set" data-addset="${ei}">＋ セットを追加${hint}</button>
-          ${last ? `<button class="repeat-set" data-repeatset="${ei}" aria-label="同じ内容でもう1セット">🔁 ${last.r}×${fmtNum(last.w)}kg</button>` : ''}
+          <button class="add-set" data-addset="${ei}">＋ セットを追加</button>
+          ${quick}
         </div></div>`;
       });
     } else {
       html += `<div class="empty"><span class="em">🏋️</span>この日の記録はまだありません。<br>下の「＋ 種目を追加」から始めましょう。</div>`;
     }
     body.innerHTML = html;
+    renderQuickRepeat();
   }
 
   // ---------- render: 種目 ----------
@@ -869,9 +951,14 @@
       body.innerHTML = `<div class="empty"><span class="em">🕘</span>まだ記録がありません。<br>記録タブでトレを記録すると、ここに種目ごとの最新が並びます。</div>`;
       return;
     }
+    // 今日すでに記録に入っている種目
+    const todayW = workoutByDate(todayStr());
+    const inToday = new Set(todayW ? todayW.entries.map(en => en.exerciseId) : []);
+
     let html = `<div class="hint-note" style="margin-top:8px;">最後にやった順に並びます。タップで過去の記録が見られます。</div>`;
     for (const r of rows) {
       const open = state.histOpen === r.ex.id;
+      const added = inToday.has(r.ex.id);
       html += `<div class="hist-card ${open?'open':''}">
         <div class="hist-head" data-histopen="${r.ex.id}">
           <div class="hist-main">
@@ -882,6 +969,11 @@
             <span class="hl-w">${fmtNum(r.last.w)}<span class="u">kg</span></span>
             <span class="hl-r">${r.last.r}回 / ${r.setCount}セット</span>
           </div>
+        </div>
+        <div class="hist-actions">
+          <button class="hist-add ${added?'added':''}" data-histadd="${r.ex.id}" ${added?'disabled':''}>
+            ${added ? '✓ 今日に追加済み' : '＋ 今日の記録に追加'}
+          </button>
         </div>
         ${open ? renderHistDetail(r.ex.id) : ''}
       </div>`;
@@ -900,13 +992,27 @@
     return html;
   }
 
-  $('#histBody').addEventListener('click', (e) => {
+  $('#histBody').addEventListener('click', async (e) => {
+    const add = e.target.closest('[data-histadd]');
+    if (add) { await addExerciseToToday(add.dataset.histadd); return; }
     const h = e.target.closest('[data-histopen]');
     if (!h) return;
     const id = h.dataset.histopen;
     state.histOpen = (state.histOpen === id) ? null : id;
     renderHist();
   });
+
+  // 履歴から今日の記録へ種目を追加
+  async function addExerciseToToday(exId) {
+    const ex = exById(exId); if (!ex) return;
+    const wk = await ensureWorkout(todayStr());
+    if (wk.entries.some(en => en.exerciseId === exId)) { toast('すでに追加済みです'); return; }
+    wk.entries.push({ exerciseId: exId, sets: [] });
+    await saveWorkout(wk);
+    state.recDate = todayStr();
+    renderRec(); renderHist();
+    toast(`${ex.name}を今日の記録に追加`);
+  }
 
   // ---------- render: メニュー一覧 ----------
   function renderMenu() {
@@ -1124,6 +1230,33 @@
     const d = new Date(ms);
     return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
+  // その日全体の活動時間（最初のセット〜最後のセット）
+  function daySummary(w) {
+    if (!w || !w.entries.length) return null;
+    const ts = [], exCount = w.entries.filter(en => en.sets.length).length;
+    let setCount = 0;
+    for (const en of w.entries) {
+      for (const s of en.sets) { setCount++; if (s.at) ts.push(s.at); }
+    }
+    if (!setCount) return null;
+    let span = null;
+    if (ts.length >= 2) {
+      const first = Math.min(...ts), last = Math.max(...ts);
+      const min = Math.round((last - first) / 60000);
+      span = { first, last, min };
+    } else if (ts.length === 1) {
+      span = { first: ts[0], last: ts[0], min: 0 };
+    }
+    return { exCount, setCount, span };
+  }
+  // 分 → 「1時間13分」「45分」
+  function fmtDuration(min) {
+    if (min < 1) return 'たった今';
+    if (min < 60) return `${min}分`;
+    const h = Math.floor(min / 60), m = min % 60;
+    return m ? `${h}時間${m}分` : `${h}時間`;
+  }
+
   // その種目の実施時刻（最初のセット〜最後のセット）
   function timeRange(sets){
     const ts = sets.map(s => s.at).filter(Boolean);
@@ -1280,14 +1413,17 @@
     if (mv) { const [i,d] = mv.dataset.moveex.split(':').map(Number); moveEntry(i, d); return; }
     const rep = e.target.closest('[data-repeatset]');
     if (rep) { repeatLastSet(parseInt(rep.dataset.repeatset,10)); return; }
+    const prep = e.target.closest('[data-prevrepeat]');
+    if (prep) { repeatPrevSet(parseInt(prep.dataset.prevrepeat,10)); return; }
     const addSet = e.target.closest('[data-addset]');
     if (addSet) { openSetSheet(parseInt(addSet.dataset.addset,10), null); return; }
     const swDel = e.target.closest('[data-swipedel]');
     if (swDel) { const [ei,si] = swDel.dataset.swipedel.split(':').map(Number); swipeDeleteSet(ei, si); return; }
     const editSet = e.target.closest('[data-editset]');
     if (editSet) {
-      if (editSet.dataset.justSwiped) return;                 // スワイプ直後は開かない
-      if (editSet.classList.contains('swiped')) { closeSwipes(null); return; } // 開いていたら閉じるだけ
+      const row = editSet.closest('.set-row');
+      if (row && row.dataset.justSwiped) return;                       // スワイプ直後は開かない
+      if (row && row.classList.contains('swiped')) { closeSwipes(null); return; } // 開いていたら閉じるだけ
       const [ei,si] = editSet.dataset.editset.split(':').map(Number); openSetSheet(ei, si); return;
     }
     const delEx = e.target.closest('[data-delex]');
@@ -1307,19 +1443,63 @@
     renderRec();
   }
 
+  // その日で最後にセットを記録した種目（記録時刻がなければ並び順の最後）
+  function latestEntryIndex(w) {
+    if (!w) return -1;
+    let best = -1, bestAt = -1;
+    w.entries.forEach((en, i) => {
+      if (!en.sets.length) return;
+      const last = en.sets[en.sets.length - 1];
+      const at = last.at || 0;
+      if (at > bestAt || (at === bestAt && i > best)) { bestAt = at; best = i; }
+    });
+    return best;
+  }
+
+  // フッターのリピートボタンを更新
+  function renderQuickRepeat() {
+    const btn = $('#quickRepeat');
+    const w = workoutByDate(state.recDate);
+    const ei = latestEntryIndex(w);
+    if (ei < 0) { btn.hidden = true; return; }
+    const en = w.entries[ei];
+    const ex = exById(en.exerciseId);
+    if (!ex) { btn.hidden = true; return; }
+    const last = en.sets[en.sets.length - 1];
+    btn.hidden = false;
+    btn.dataset.ei = ei;
+    btn.innerHTML = `<span class="qr-ic">🔁</span>
+      <span class="qr-txt"><span class="qr-name">${esc(ex.name)}</span>
+      <span class="qr-set">${last.r}回 × ${fmtNum(last.w)}kg をもう1セット</span></span>`;
+  }
+  $('#quickRepeat').addEventListener('click', () => {
+    const ei = parseInt($('#quickRepeat').dataset.ei, 10);
+    if (!isNaN(ei)) repeatLastSet(ei);
+  });
+
   // 直前セットと同じ内容でもう1セット記録
   async function repeatLastSet(ei) {
     const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const last = w.entries[ei].sets[w.entries[ei].sets.length-1]; if (!last) return;
+    await quickAddSet(ei, last);
+  }
+  // 前回のトレと同じ内容で1セット目を記録
+  async function repeatPrevSet(ei) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
+    const pv = prevSetFor(w.entries[ei].exerciseId, state.recDate); if (!pv) return;
+    await quickAddSet(ei, pv);
+  }
+  // 指定の内容で1セット追加（リピート系の共通処理）
+  async function quickAddSet(ei, src) {
+    const w = workoutByDate(state.recDate); if (!w || !w.entries[ei]) return;
     const entry = w.entries[ei];
-    const last = entry.sets[entry.sets.length-1]; if (!last) return;
     // 保存を待つ前にタイマーを開始（タップの流れを切らさないため）
     const exName = (exById(entry.exerciseId)||{}).name || '';
     if (state.recDate === todayStr()) startRest(exName);
-    entry.sets.push({ w: last.w, r: last.r, at: now() });
+    entry.sets.push({ w: src.w, r: src.r, at: now() });
     await saveWorkout(w);
     renderRec();
-    const setNo = entry.sets.length;
-    toast(`${setNo}セット目を記録（${last.r}回 × ${fmtNum(last.w)}kg）`);
+    toast(`${entry.sets.length}セット目を記録（${src.r}回 × ${fmtNum(src.w)}kg）`);
   }
 
   async function confirmDelEntry(ei) {
@@ -2104,6 +2284,12 @@
         <button data-multi="1" class="${state.multiPick?'on':''}">まとめて追加</button>
       </div>
       <div class="set-note">「1個ずつ」はタップしたらすぐ追加されます。「まとめて」は複数選んでから確定ボタンで追加します。</div>
+      <div class="sect-label">タップできる場所に色を付ける</div>
+      <div class="rest-pills" id="tapPills">
+        <button data-showtap="0" class="${state.showTap?'':'on'}">オフ</button>
+        <button data-showtap="1" class="${state.showTap?'on':''}">オン</button>
+      </div>
+      <div class="set-note">記録画面で、色が付いた場所だけがタップに反応します。色のない場所は押しても何も起きません。</div>
       <div class="sect-label">下のタブの並び順</div>
       <div class="tab-order" id="tabOrderList">${state.tabOrder.map((id,i)=>`
         <div class="to-row">
@@ -2198,6 +2384,14 @@
       mixEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.mix==='1')===state.mixAudio));
       applyAudioSession();
     });
+    const tapEl = sheet.querySelector('#tapPills');
+    if (tapEl) tapEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-showtap]'); if (!b) return;
+      state.showTap = (b.dataset.showtap === '1');
+      try { localStorage.setItem('tsumiage-showtap', state.showTap ? '1' : '0'); } catch (_) {}
+      tapEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.showtap==='1')===state.showTap));
+      document.body.classList.toggle('show-tap', state.showTap);
+    });
     const pickEl = sheet.querySelector('#pickPills');
     if (pickEl) pickEl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-multi]'); if (!b) return;
@@ -2268,6 +2462,8 @@
     try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
     try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
     try { const mp = localStorage.getItem('tsumiage-multipick'); if (mp !== null) state.multiPick = (mp === '1'); } catch (_) {}
+    try { const tp = localStorage.getItem('tsumiage-showtap'); if (tp !== null) state.showTap = (tp === '1'); } catch (_) {}
+    document.body.classList.toggle('show-tap', state.showTap);
     try { const mx = localStorage.getItem('tsumiage-mixaudio'); if (mx !== null) state.mixAudio = (mx === '1'); } catch (_) {}
     try {
       const to = JSON.parse(localStorage.getItem('tsumiage-taborder'));
