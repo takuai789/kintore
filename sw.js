@@ -1,7 +1,7 @@
 // つみあげ Service Worker（自動アップデート対応）
 // HTML本体はネットワーク優先、静的アセットはキャッシュ優先。
 // リリース時は index.html の APP_VERSION と CACHE をセットで上げる。
-const CACHE = 'tsumiage-v3-26-0';
+const CACHE = 'tsumiage-v3-28-0';
 const ASSETS = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -14,6 +14,16 @@ self.addEventListener('activate', (e) => {
   );
 });
 self.addEventListener('message', (e) => { if (e.data === 'SKIP_WAITING') self.skipWaiting(); });
+
+// 通知をタップしたらアプリを前面に（開いていなければ開く）
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of all) { if ('focus' in c) { await c.focus(); return; } }
+    if (self.clients.openWindow) await self.clients.openWindow('./');
+  })());
+});
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;

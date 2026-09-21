@@ -609,7 +609,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.26.0';
+  const APP_VERSION = '3.28.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -638,7 +638,8 @@
     menus: [],         // マイメニュー {id,name,note,items:[{exerciseId,sets,reps,weight}],order,...}
     editingMenu: null, // メニュー編集中の作業コピー
     editingSnapshot: null, // 編集開始時のスナップショット（未保存判定用）
-    keepAwake: true,   // 記録中に画面を消さない（端末に記憶）
+    awakeMode: 'all',  // 画面を消さない範囲: 'off' | 'rec' | 'all'（端末に記憶）
+    notifyRest: true,  // 休憩おわりを通知する（端末に記憶）
     multiPick: false,  // 種目選びで複数まとめて追加するか（端末に記憶）
     showTap: false,    // タップできる場所に色を付ける（確認用）
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
@@ -652,7 +653,7 @@
   // ---------- 画面を消させない（Wake Lock） ----------
   let wakeLock = null;
   async function acquireWakeLock() {
-    if (!state.keepAwake || !('wakeLock' in navigator)) return;
+    if (state.awakeMode === 'off' || !('wakeLock' in navigator)) return;
     if (wakeLock) return;
     try {
       wakeLock = await navigator.wakeLock.request('screen');
@@ -665,8 +666,11 @@
     wakeLock = null;
   }
   // 記録タブにいる間だけ有効。復帰時は取り直す（iOSは自動解除されるため）
+  // 'off' = 通常どおり / 'rec' = 記録タブだけ / 'all' = アプリを開いている間ずっと
   function syncWakeLock() {
-    if (state.keepAwake && state.tab === 'rec' && document.visibilityState === 'visible') acquireWakeLock();
+    const on = state.awakeMode === 'all'
+      || (state.awakeMode === 'rec' && state.tab === 'rec');
+    if (on && document.visibilityState === 'visible') acquireWakeLock();
     else releaseWakeLock();
   }
   document.addEventListener('visibilitychange', syncWakeLock);
@@ -1859,6 +1863,10 @@
     restAudio.addEventListener('error', () => { setTimeout(ensureRestSoundAlive, 300); });
     // 最後まで鳴り切ったら解放（ダイナミックアイランドに残さない）
     restAudio.addEventListener('ended', () => { if (!state.restEndAt) cancelRestSound(); });
+    // 裏で setInterval が止まっていても、再生の進行に合わせて時間切れを拾う
+    restAudio.addEventListener('timeupdate', () => {
+      if (state.restEndAt && Date.now() >= state.restEndAt) updateRestBar();
+    });
   }
   let releaseTimer = null;
   function cancelRestSound() {
@@ -1924,6 +1932,32 @@
   }
   $('#manualTimerBtn').addEventListener('click', openTimerSheet);
 
+  // ---------- 休憩おわりの通知 ----------
+  // アプリを裏にしていても、音を鳴らす瞬間はJSが生きているので、その時に通知を出せる
+  function notifySupported() {
+    return 'Notification' in window && 'serviceWorker' in navigator;
+  }
+  async function requestNotifyPermission() {
+    if (!notifySupported()) return 'unsupported';
+    if (Notification.permission === 'granted') return 'granted';
+    if (Notification.permission === 'denied') return 'denied';
+    try { return await Notification.requestPermission(); } catch (_) { return 'denied'; }
+  }
+  async function notifyRestDone(exName) {
+    if (!state.notifyRest) return;
+    if (!notifySupported() || Notification.permission !== 'granted') return;
+    // アプリを見ている時は画面のフラッシュで十分なので出さない
+    if (document.visibilityState === 'visible') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('💪 休憩おわり！', {
+        body: exName ? `${exName}　次のセットへ` : '次のセットへ',
+        tag: 'rest-done', renotify: true,
+        icon: 'icon-192.png', badge: 'icon-192.png',
+      });
+    } catch (_) {}
+  }
+
   // ---------- ロック画面の表示（Media Session） ----------
   // 再生中はロック画面に出るので、そこに種目名と残り時間を出し、
   // 一時停止ボタンを「スキップ」として使えるようにする。
@@ -1976,9 +2010,11 @@
     } catch (_) {}
   }
   function stopRest(finished) {
+    const exName = state.restExName;
     state.restEndAt = 0;
     state.restExName = '';
     clearMediaSession();
+    if (finished) notifyRestDone(exName);
     if (restTick) { clearInterval(restTick); restTick = null; }
     if (finished) {
       // 鳴り終わるのを待ってから解放（メディア再生の表示を残さない）
@@ -2268,16 +2304,30 @@
         <button data-mix="1" class="${state.mixAudio?'on':''}">音楽を止めない</button>
       </div>
       <div class="set-note">「確実に鳴らす」は画面を消していても鳴りますが、タイマー中は音楽が止まります。「音楽を止めない」は音楽と共存できますが、画面を消していると鳴りません。</div>
+      <div class="sect-label">休憩おわりの通知</div>
+      ${!notifySupported()
+        ? `<div class="set-note">この環境では通知を使えません。ホーム画面に追加したアプリ（iOS 16.4以降）で使えます。</div>`
+        : (Notification.permission === 'granted'
+          ? `<div class="rest-pills" id="notifyPills">
+               <button data-notify="1" class="${state.notifyRest?'on':''}">オン</button>
+               <button data-notify="0" class="${state.notifyRest?'':'on'}">オフ</button>
+             </div>
+             <div class="set-note">マッスルを裏にして他のアプリを使っていても、休憩が終わると画面上部にバナーが出ます。タップでマッスルに戻れます。</div>`
+          : (Notification.permission === 'denied'
+            ? `<div class="set-note">通知が拒否されています。iPhoneの「設定 → 通知 → マッスル」から許可してください。</div>`
+            : `<button class="sheet-toggle" id="notifyAsk" style="margin-top:0;">通知を許可する</button>
+               <div class="set-note">許可すると、マッスルを裏にしていても休憩が終わった時にバナーで知らせます。</div>`))}
       <div class="sect-label">鳴らす音（タップで試聴）</div>
       <div class="rest-pills" id="soundPills">
         ${REST_SOUNDS.map(s=>`<button data-sound="${s.id}" class="${s.id===state.restSound?'on':''}">${s.label}</button>`).join('')}
       </div>
-      <div class="sect-label">記録中の画面</div>
+      <div class="sect-label">画面を暗くしない</div>
       <div class="rest-pills" id="awakePills">
-        <button data-awake="1" class="${state.keepAwake?'on':''}">スリープしない</button>
-        <button data-awake="0" class="${state.keepAwake?'':'on'}">通常どおり</button>
+        <button data-awake="all" class="${state.awakeMode==='all'?'on':''}">アプリ全体</button>
+        <button data-awake="rec" class="${state.awakeMode==='rec'?'on':''}">記録タブだけ</button>
+        <button data-awake="off" class="${state.awakeMode==='off'?'on':''}">通常どおり</button>
       </div>
-      <div class="set-note">記録タブを開いている間、画面が自動で暗くならないようにします。ジムでの誤タップ防止に。</div>
+      <div class="set-note">「アプリ全体」はマッスルを開いている間ずっと画面が点いたままになります。ジムでの誤タップ防止に。バッテリーを節約したいときは「記録タブだけ」や「通常どおり」に。</div>
       <div class="sect-label">種目の選び方</div>
       <div class="rest-pills" id="pickPills">
         <button data-multi="0" class="${state.multiPick?'':'on'}">1個ずつ追加</button>
@@ -2345,6 +2395,19 @@
       sheet.querySelectorAll('#restPills button').forEach(x => x.classList.toggle('on', parseInt(x.dataset.rest,10)===state.restSec));
       if (state.restSec === 0) stopRest(false);
     });
+    const askBtn = sheet.querySelector('#notifyAsk');
+    if (askBtn) askBtn.addEventListener('click', async () => {
+      const r = await requestNotifyPermission();
+      if (r === 'granted') { toast('通知を許可しました'); closeSheet(); openSettings(); }
+      else if (r === 'denied') toast('通知が拒否されました');
+    });
+    const notifyEl = sheet.querySelector('#notifyPills');
+    if (notifyEl) notifyEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-notify]'); if (!b) return;
+      state.notifyRest = (b.dataset.notify === '1');
+      try { localStorage.setItem('tsumiage-notify', state.notifyRest ? '1' : '0'); } catch (_) {}
+      notifyEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.notify==='1')===state.notifyRest));
+    });
     const soundEl = sheet.querySelector('#soundPills');
     if (soundEl) soundEl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-sound]'); if (!b) return;
@@ -2402,9 +2465,9 @@
     const awakeEl = sheet.querySelector('#awakePills');
     if (awakeEl) awakeEl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-awake]'); if (!b) return;
-      state.keepAwake = (b.dataset.awake === '1');
-      try { localStorage.setItem('tsumiage-awake', state.keepAwake ? '1' : '0'); } catch (_) {}
-      awakeEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', (x.dataset.awake==='1')===state.keepAwake));
+      state.awakeMode = b.dataset.awake;
+      try { localStorage.setItem('tsumiage-awakemode', state.awakeMode); } catch (_) {}
+      awakeEl.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.awake === state.awakeMode));
       syncWakeLock();
     });
     sheet.querySelector('#btnExport').addEventListener('click', exportData);
@@ -2459,10 +2522,19 @@
     setupViewportTracking();
     try { const s = parseFloat(localStorage.getItem('tsumiage-wstep')); if (s > 0) state.weightStep = s; } catch (_) {}
     try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
-    try { const a = localStorage.getItem('tsumiage-awake'); if (a !== null) state.keepAwake = (a === '1'); } catch (_) {}
+    try {
+      const am = localStorage.getItem('tsumiage-awakemode');
+      if (am && ['off','rec','all'].includes(am)) state.awakeMode = am;
+      else {
+        // 旧設定（オン/オフ）からの引き継ぎ
+        const a = localStorage.getItem('tsumiage-awake');
+        if (a !== null) state.awakeMode = (a === '1') ? 'rec' : 'off';
+      }
+    } catch (_) {}
     try { const snd = localStorage.getItem('tsumiage-sound'); if (snd && REST_SOUNDS.some(x=>x.id===snd)) state.restSound = snd; } catch (_) {}
     try { const mp = localStorage.getItem('tsumiage-multipick'); if (mp !== null) state.multiPick = (mp === '1'); } catch (_) {}
     try { const tp = localStorage.getItem('tsumiage-showtap'); if (tp !== null) state.showTap = (tp === '1'); } catch (_) {}
+    try { const nr = localStorage.getItem('tsumiage-notify'); if (nr !== null) state.notifyRest = (nr === '1'); } catch (_) {}
     document.body.classList.toggle('show-tap', state.showTap);
     try { const mx = localStorage.getItem('tsumiage-mixaudio'); if (mx !== null) state.mixAudio = (mx === '1'); } catch (_) {}
     try {
