@@ -182,6 +182,60 @@
   .ds-item.time { margin-left: auto; text-align: right; }
   .ds-range { display: block; font-size: 11px; color: var(--tertiary); font-weight: 500; margin-top: 1px; }
 
+  /* ---- その日のメモ（筋肉痛など） ---- */
+  .note-add { width: 100%; background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px; min-height: 48px;
+    font-size: 14px; font-weight: 600; color: var(--secondary); text-align: left; }
+  .note-add:active { background: #f0f0f4; }
+  .note-add .na-em { font-size: 17px; }
+  .note-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; min-height: 48px; }
+  .note-card:active { background: #fafafc; }
+  .nc-top { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .nc-lbl { font-size: 11px; font-weight: 700; color: var(--secondary); letter-spacing: .04em; }
+  .nc-edit { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--amber); }
+  .sore-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; }
+  .sore-tag { display: inline-flex; align-items: baseline; gap: 4px; padding: 4px 9px; border-radius: 8px;
+    font-size: 12px; font-weight: 700; }
+  .sore-tag .st-lv { font-size: 10px; font-weight: 600; opacity: .8; }
+  .sore-tag.lv1 { background: #eaf6ee; color: #15803d; }
+  .sore-tag.lv2 { background: var(--amber-soft); color: #b45309; }
+  .sore-tag.lv3 { background: #fdecea; color: #c0392b; }
+  .nc-text { font-size: 14px; color: var(--ink); line-height: 1.6; margin-top: 8px; white-space: pre-wrap; word-break: break-word; }
+  /* 記録画面では長文をたたんでおく（全文は編集画面と履歴のメモ一覧で見られる） */
+  .note-card .nc-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+
+  /* メモ入力シート */
+  .sore-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .sore-btn { padding: 11px 0 9px; border-radius: 11px; background: var(--bg); color: var(--secondary);
+    font-size: 14px; font-weight: 700; min-height: 54px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; }
+  .sore-btn .sb-lv { font-size: 10px; font-weight: 600; opacity: .85; }
+  .sore-btn:active { transform: scale(0.96); }
+  .sore-btn.lv1 { background: #d9efe1; color: #15803d; }
+  .sore-btn.lv2 { background: #fde3b0; color: #b45309; }
+  .sore-btn.lv3 { background: #f8c9c3; color: #c0392b; }
+  .note-ta { width: 100%; border: 0; background: transparent; padding: 10px 2px; font-size: 16px;
+    line-height: 1.6; color: var(--ink); resize: none; min-height: 96px; font-family: inherit; }
+  .note-ta:focus { outline: none; }
+  .note-ta::placeholder { color: var(--tertiary); }
+
+  /* ---- 履歴タブの切替（種目ごと / メモ） ---- */
+  .hist-seg { display: flex; gap: 4px; margin: 10px 14px 0; padding: 3px;
+    background: rgba(120,120,128,0.12); border-radius: 10px; flex-shrink: 0; }
+  .hist-seg button { flex: 1; padding: 9px 0; min-height: 38px; border-radius: 8px;
+    font-size: 14px; font-weight: 600; color: var(--secondary); background: transparent; }
+  .hist-seg button.on { background: #fff; color: var(--navy); font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+
+  /* メモ一覧 */
+  .note-row { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+  .note-row:active { background: #fafafc; }
+  .nr-head { display: flex; align-items: baseline; gap: 8px; }
+  .nr-date { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .nr-rel { font-size: 11px; font-weight: 600; color: var(--tertiary); }
+  .nr-train { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--secondary); }
+  .nr-rest { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--tertiary); }
+
   /* ---- データ保護 ---- */
   .protect-box { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
   .pb-row { display: flex; gap: 10px; align-items: flex-start; }
@@ -528,6 +582,10 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button></div>
     </div>
+    <div class="hist-seg">
+      <button data-histmode="ex" id="hsEx" class="on">種目ごと</button>
+      <button data-histmode="note" id="hsNote">メモ</button>
+    </div>
     <div class="scroll" id="histBody"></div>
   </div>
 
@@ -609,7 +667,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.28.0';
+  const APP_VERSION = '3.29.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -625,6 +683,9 @@
   // ---------- state ----------
   const WEIGHT_STEPS = [1, 2.5, 5];
   const REP_CHOICES = [1, 2, 3, 4, 5, 10, 20];
+  // 筋肉痛メモ: 部位と強さ（タップで 無→軽い→ふつう→強い→無 と回る）
+  const SORE_PARTS = ['胸', '背中', '肩', '腕', '脚', 'お尻', '腹', '首'];
+  const SORE_LV = { 1: '軽い', 2: 'ふつう', 3: '強い' };
   const state = {
     exercises: [],   // {id,name,category,isPreset,hidden,fav,order,createdAt,updatedAt}
     workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,at}]}],updatedAt}
@@ -645,6 +706,7 @@
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     histOpen: null,    // 履歴タブで展開中の種目ID
+    histMode: 'ex',    // 履歴タブの表示: 'ex'=種目ごと | 'note'=メモ
     tabOrder: ['rec','hist','menu','ex'], // 下のタブの並び順（端末に記憶）
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
@@ -733,10 +795,29 @@
     if (!w) { w = { id: date, date, entries: [], updatedAt: now() }; state.workouts.push(w); }
     return w;
   }
+  // ---------- その日のメモ（主に筋肉痛の記録） ----------
+  // w.note = { parts: { '胸': 2, '脚': 3 }, text: '…', at: ms }
+  function notePartsOf(note) {
+    if (!note || !note.parts) return [];
+    return SORE_PARTS.filter(p => note.parts[p]).map(p => ({ part: p, lv: note.parts[p] }));
+  }
+  function hasNote(w) {
+    if (!w || !w.note) return false;
+    const txt = (w.note.text || '').trim();
+    return !!txt || notePartsOf(w.note).length > 0;
+  }
+  // メモがある日を新しい順に（トレのない日も含む）
+  function notesList() {
+    return state.workouts
+      .filter(hasNote)
+      .map(w => ({ date: w.id, note: w.note, sum: daySummary(w) }))
+      .sort((a, b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));
+  }
+
   async function saveWorkout(w) {
     w.updatedAt = now();
-    // 空ワークアウト（種目なし）は保存せず削除
-    if (!w.entries.length) {
+    // 空ワークアウト（種目もメモもない）は保存せず削除
+    if (!w.entries.length && !hasNote(w)) {
       state.workouts = state.workouts.filter(x => x.id !== w.id);
       await del('workouts', w.id).catch(()=>{});
     } else {
@@ -821,6 +902,8 @@
           : ''}
       </div>`;
     }
+    // その日のメモ（筋肉痛など）。トレのない日でも書ける
+    html += renderNoteCard(w);
     if (w && w.entries.length) {
       const total = w.entries.length;
       w.entries.forEach((en, ei) => {
@@ -894,6 +977,111 @@
     renderQuickRepeat();
   }
 
+  // 記録画面のメモ欄（無いときは書くボタン、あるときは中身を表示）
+  function renderNoteCard(w) {
+    if (!hasNote(w)) {
+      return `<button class="note-add" data-noteedit="1">
+        <span class="na-em">📝</span>この日のメモを書く（筋肉痛など）
+      </button>`;
+    }
+    const tags = notePartsOf(w.note);
+    const txt = (w.note.text || '').trim();
+    return `<div class="note-card" data-noteedit="1">
+      <div class="nc-top"><span class="nc-lbl">📝 この日のメモ</span><span class="nc-edit">編集</span></div>
+      ${tags.length ? `<div class="sore-tags">${tags.map(t =>
+        `<span class="sore-tag lv${t.lv}">${t.part}<span class="st-lv">${SORE_LV[t.lv]}</span></span>`).join('')}</div>` : ''}
+      ${txt ? `<div class="nc-text">${esc(txt)}</div>` : ''}
+    </div>`;
+  }
+
+  // 指定日以前でいちばん近いトレ日と、その日に鍛えた部位（カテゴリ）
+  function recentTrainedParts(date) {
+    const cand = state.workouts
+      .filter(w => w.id <= date && w.entries.some(en => en.sets.length))
+      .sort((a, b) => a.id < b.id ? 1 : (a.id > b.id ? -1 : 0));
+    const w = cand[0];
+    if (!w) return null;
+    const cats = [];
+    for (const en of w.entries) {
+      if (!en.sets.length) continue;
+      const ex = exById(en.exerciseId);
+      if (ex && !cats.includes(ex.category)) cats.push(ex.category);
+    }
+    return cats.length ? { date: w.id, cats } : null;
+  }
+
+  // ---------- メモ入力シート ----------
+  function openNoteSheet(date) {
+    const existing = workoutByDate(date);
+    const cur = {
+      parts: { ...((existing && existing.note && existing.note.parts) || {}) },
+      text: (existing && existing.note && existing.note.text) || '',
+    };
+    const had = hasNote(existing);
+    // 筋肉痛は前のトレで出るので、直近のトレ日とその部位を出しておく
+    const rc = recentTrainedParts(date);
+    const subText = rc
+      ? `直近のトレ ${fmtDate(rc.date)}・${relDayLabel(rc.date)}：${rc.cats.join('・')}`
+      : '部位をタップ（軽い→ふつう→強い→消す）';
+
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <h3>${fmtDate(date)}のメモ</h3>
+      <div class="sub">${esc(subText)}</div>
+      <div class="field-box">
+        <div class="fb-head"><span class="fb-lbl">筋肉痛の部位</span></div>
+        <div class="sore-grid" id="soreGrid"></div>
+      </div>
+      <div class="field-box">
+        <div class="fb-head"><span class="fb-lbl">メモ</span></div>
+        <textarea class="note-ta" id="noteText" placeholder="体調、痛みの様子、気づいたことなど">${esc(cur.text)}</textarea>
+      </div>
+      <button class="sheet-save big" id="noteSave">メモを保存</button>
+      ${had ? `<button class="sheet-del" id="noteDel">この日のメモを消す</button>` : ''}
+    `;
+
+    const grid = sheet.querySelector('#soreGrid');
+    const drawGrid = () => {
+      grid.innerHTML = SORE_PARTS.map(p => {
+        const lv = cur.parts[p] || 0;
+        return `<button class="sore-btn ${lv ? 'lv' + lv : ''}" data-sore="${p}">
+          <span>${p}</span>${lv ? `<span class="sb-lv">${SORE_LV[lv]}</span>` : ''}
+        </button>`;
+      }).join('');
+    };
+    drawGrid();
+    grid.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sore]'); if (!b) return;
+      const p = b.dataset.sore;
+      const next = ((cur.parts[p] || 0) + 1) % 4;   // 0→1→2→3→0
+      if (next) cur.parts[p] = next; else delete cur.parts[p];
+      drawGrid();
+    });
+
+    const commit = async (clear) => {
+      const wk = await ensureWorkout(date);
+      if (clear) {
+        delete wk.note;
+      } else {
+        const text = sheet.querySelector('#noteText').value.trim();
+        const note = { parts: { ...cur.parts }, text, at: now() };
+        if (hasNote({ note })) wk.note = note; else delete wk.note;
+      }
+      await saveWorkout(wk);
+      closeSheet(); renderRec(); renderHist();
+      toast(clear ? 'メモを消しました' : 'メモを保存しました');
+    };
+    sheet.querySelector('#noteSave').addEventListener('click', () => commit(false));
+    const delBtn = sheet.querySelector('#noteDel');
+    if (delBtn) delBtn.addEventListener('click', () => {
+      if (!confirm('この日のメモを消しますか？（記録したトレーニングは残ります）')) return;
+      commit(true);
+    });
+
+    openSheet(sheet);
+  }
+
   // ---------- render: 種目 ----------
   function renderEx() {
     const body = $('#exBody');
@@ -942,13 +1130,13 @@
 
   // 「8/3（月）」＋経過日数
   function histDateLabel(dateStr) {
-    const d = parseYmd(dateStr);
-    const days = Math.round((parseYmd(todayStr()) - d) / 86400000);
-    const rel = days === 0 ? '今日' : (days === 1 ? '昨日' : `${days}日前`);
-    return `${fmtDate(dateStr)}・${rel}`;
+    return `${fmtDate(dateStr)}・${relDayLabel(dateStr)}`;
   }
 
   function renderHist() {
+    $('#hsEx').classList.toggle('on', state.histMode !== 'note');
+    $('#hsNote').classList.toggle('on', state.histMode === 'note');
+    if (state.histMode === 'note') { renderHistNotes(); return; }
     const body = $('#histBody');
     const rows = lastByExercise();
     if (!rows.length) {
@@ -985,6 +1173,40 @@
     body.innerHTML = html;
   }
 
+  // ---------- render: 履歴タブのメモ一覧（日付の新しい順） ----------
+  function renderHistNotes() {
+    const body = $('#histBody');
+    const rows = notesList();
+    if (!rows.length) {
+      body.innerHTML = `<div class="empty"><span class="em">📝</span>まだメモがありません。<br>記録タブの「この日のメモを書く」から<br>筋肉痛の様子などを残せます。<br>トレをしていない日でも書けます。</div>`;
+      return;
+    }
+    let html = `<div class="hint-note" style="margin-top:8px;">タップするとその日のメモを編集できます。</div>`;
+    for (const r of rows) {
+      const tags = notePartsOf(r.note);
+      const txt = (r.note.text || '').trim();
+      html += `<div class="note-row" data-notedate="${r.date}">
+        <div class="nr-head">
+          <span class="nr-date">${fmtDate(r.date)}</span>
+          <span class="nr-rel">${relDayLabel(r.date)}</span>
+          ${r.sum
+            ? `<span class="nr-train">🏋️ ${r.sum.exCount}種目・${r.sum.setCount}セット</span>`
+            : `<span class="nr-rest">休養日</span>`}
+        </div>
+        ${tags.length ? `<div class="sore-tags">${tags.map(t =>
+          `<span class="sore-tag lv${t.lv}">${t.part}<span class="st-lv">${SORE_LV[t.lv]}</span></span>`).join('')}</div>` : ''}
+        ${txt ? `<div class="nc-text">${esc(txt)}</div>` : ''}
+      </div>`;
+    }
+    body.innerHTML = html;
+  }
+
+  // 「今日」「昨日」「3日前」
+  function relDayLabel(dateStr) {
+    const days = Math.round((parseYmd(todayStr()) - parseYmd(dateStr)) / 86400000);
+    return days === 0 ? '今日' : (days === 1 ? '昨日' : `${days}日前`);
+  }
+
   // その種目の過去の記録（直近5日分）
   function renderHistDetail(exId) {
     let html = '<div class="hist-detail">';
@@ -996,7 +1218,13 @@
     return html;
   }
 
+  // 履歴タブの切替（#histBody の外なので、ボタン自身に直接つける）
+  $('#hsEx').addEventListener('click', () => { state.histMode = 'ex'; renderHist(); });
+  $('#hsNote').addEventListener('click', () => { state.histMode = 'note'; renderHist(); });
+
   $('#histBody').addEventListener('click', async (e) => {
+    const nd = e.target.closest('[data-notedate]');
+    if (nd) { openNoteSheet(nd.dataset.notedate); return; }
     const add = e.target.closest('[data-histadd]');
     if (add) { await addExerciseToToday(add.dataset.histadd); return; }
     const h = e.target.closest('[data-histopen]');
@@ -1413,6 +1641,8 @@
   $('#addExToDay').addEventListener('click', () => openExercisePicker());
 
   $('#recBody').addEventListener('click', (e) => {
+    const nt = e.target.closest('[data-noteedit]');
+    if (nt) { openNoteSheet(state.recDate); return; }
     const mv = e.target.closest('[data-moveex]');
     if (mv) { const [i,d] = mv.dataset.moveex.split(':').map(Number); moveEntry(i, d); return; }
     const rep = e.target.closest('[data-repeatset]');
