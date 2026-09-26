@@ -182,6 +182,17 @@
   .ds-item.time { margin-left: auto; text-align: right; }
   .ds-range { display: block; font-size: 11px; color: var(--tertiary); font-weight: 500; margin-top: 1px; }
 
+  /* ---- その日の印（パーソナルジム） ---- */
+  .day-row { display: flex; gap: 8px; margin-bottom: 14px; align-items: stretch; }
+  .day-row .note-add { margin-bottom: 0; flex: 1; min-width: 0; }
+  .gym-chip { flex-shrink: 0; background: #fff; border-radius: 12px; padding: 0 13px; min-height: 48px;
+    display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700;
+    white-space: nowrap; color: var(--secondary); border: 1.5px dashed rgba(60,60,67,0.28); }
+  .gym-chip .gc-em { font-size: 15px; filter: grayscale(1); opacity: .55; }
+  .gym-chip.on { background: var(--navy); color: #fff; border: 1.5px solid var(--navy); }
+  .gym-chip.on .gc-em { filter: none; opacity: 1; }
+  .gym-chip:active { transform: scale(0.96); }
+
   /* ---- その日のメモ（筋肉痛など） ---- */
   .note-add { width: 100%; background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 14px;
     display: flex; align-items: center; gap: 8px; min-height: 48px;
@@ -235,6 +246,9 @@
   .nr-rel { font-size: 11px; font-weight: 600; color: var(--tertiary); }
   .nr-train { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--secondary); }
   .nr-rest { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--tertiary); }
+  .note-row.gym { border-left: 3px solid var(--navy); }
+  .nr-gym { display: inline-flex; align-items: center; background: var(--navy); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px; }
 
   /* ---- データ保護 ---- */
   .protect-box { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
@@ -667,7 +681,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.29.0';
+  const APP_VERSION = '3.30.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -806,18 +820,20 @@
     const txt = (w.note.text || '').trim();
     return !!txt || notePartsOf(w.note).length > 0;
   }
-  // メモがある日を新しい順に（トレのない日も含む）
+  // その日について何か残っているか（メモ or パーソナルの印）
+  function hasDayInfo(w) { return hasNote(w) || !!(w && w.gym); }
+  // メモ・印がある日を新しい順に（トレのない日も含む）
   function notesList() {
     return state.workouts
-      .filter(hasNote)
-      .map(w => ({ date: w.id, note: w.note, sum: daySummary(w) }))
+      .filter(hasDayInfo)
+      .map(w => ({ date: w.id, note: w.note, gym: !!w.gym, sum: daySummary(w) }))
       .sort((a, b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));
   }
 
   async function saveWorkout(w) {
     w.updatedAt = now();
-    // 空ワークアウト（種目もメモもない）は保存せず削除
-    if (!w.entries.length && !hasNote(w)) {
+    // 空ワークアウト（種目もメモも印もない）は保存せず削除
+    if (!w.entries.length && !hasDayInfo(w)) {
       state.workouts = state.workouts.filter(x => x.id !== w.id);
       await del('workouts', w.id).catch(()=>{});
     } else {
@@ -884,11 +900,12 @@
   function renderRec() {
     const date = state.recDate;
     const chip = $('#dateChip');
-    if (date === todayStr()) { chip.textContent = '今日 ・ ' + fmtDate(date); chip.classList.add('today'); }
-    else { chip.textContent = fmtDate(date); chip.classList.remove('today'); }
+    const w = workoutByDate(date);
+    const gymMark = (w && w.gym) ? '💪 ' : '';
+    if (date === todayStr()) { chip.textContent = gymMark + '今日 ・ ' + fmtDate(date); chip.classList.add('today'); }
+    else { chip.textContent = gymMark + fmtDate(date); chip.classList.remove('today'); }
     $('#dateNext').disabled = (date >= todayStr());
 
-    const w = workoutByDate(date);
     const body = $('#recBody');
     let html = '';
     // その日の合計（種目数・セット数・活動時間）
@@ -977,21 +994,38 @@
     renderQuickRepeat();
   }
 
-  // 記録画面のメモ欄（無いときは書くボタン、あるときは中身を表示）
+  // 記録画面の「その日」欄（パーソナルの印＋メモ）
   function renderNoteCard(w) {
+    const gym = !!(w && w.gym);
+    const chip = `<button class="gym-chip ${gym ? 'on' : ''}" data-gymtoggle="1">
+      <span class="gc-em">💪</span>パーソナル
+    </button>`;
     if (!hasNote(w)) {
-      return `<button class="note-add" data-noteedit="1">
-        <span class="na-em">📝</span>この日のメモを書く（筋肉痛など）
-      </button>`;
+      return `<div class="day-row">${chip}
+        <button class="note-add" data-noteedit="1">
+          <span class="na-em">📝</span>メモを書く
+        </button>
+      </div>`;
     }
     const tags = notePartsOf(w.note);
     const txt = (w.note.text || '').trim();
-    return `<div class="note-card" data-noteedit="1">
+    return `<div class="day-row">${chip}</div>
+    <div class="note-card" data-noteedit="1">
       <div class="nc-top"><span class="nc-lbl">📝 この日のメモ</span><span class="nc-edit">編集</span></div>
       ${tags.length ? `<div class="sore-tags">${tags.map(t =>
         `<span class="sore-tag lv${t.lv}">${t.part}<span class="st-lv">${SORE_LV[t.lv]}</span></span>`).join('')}</div>` : ''}
       ${txt ? `<div class="nc-text">${esc(txt)}</div>` : ''}
     </div>`;
+  }
+
+  // パーソナルジムに行った印を付け外しする（1タップ）
+  async function toggleGym(date) {
+    const wk = await ensureWorkout(date);
+    if (wk.gym) delete wk.gym; else wk.gym = true;
+    const on = !!wk.gym;
+    await saveWorkout(wk);
+    renderRec(); renderHist();
+    toast(on ? '💪 パーソナルの印を付けました' : 'パーソナルの印を外しました');
   }
 
   // 指定日以前でいちばん近いトレ日と、その日に鍛えた部位（カテゴリ）
@@ -1178,15 +1212,20 @@
     const body = $('#histBody');
     const rows = notesList();
     if (!rows.length) {
-      body.innerHTML = `<div class="empty"><span class="em">📝</span>まだメモがありません。<br>記録タブの「この日のメモを書く」から<br>筋肉痛の様子などを残せます。<br>トレをしていない日でも書けます。</div>`;
+      body.innerHTML = `<div class="empty"><span class="em">📝</span>まだメモがありません。<br>記録タブの「メモを書く」から<br>筋肉痛の様子などを残せます。<br>トレをしていない日でも書けます。</div>`;
       return;
     }
-    let html = `<div class="hint-note" style="margin-top:8px;">タップするとその日のメモを編集できます。</div>`;
+    const ym = todayStr().slice(0, 7);
+    const gymMonth = rows.filter(r => r.gym && r.date.slice(0, 7) === ym).length;
+    const gymAll = rows.filter(r => r.gym).length;
+    let html = `<div class="hint-note" style="margin-top:8px;">タップでその日のメモを編集。${
+      gymAll ? `<br>💪 パーソナル：今月 <b>${gymMonth}</b> 回（ぜんぶで ${gymAll} 回）` : ''}</div>`;
     for (const r of rows) {
       const tags = notePartsOf(r.note);
-      const txt = (r.note.text || '').trim();
-      html += `<div class="note-row" data-notedate="${r.date}">
+      const txt = ((r.note && r.note.text) || '').trim();
+      html += `<div class="note-row ${r.gym ? 'gym' : ''}" data-notedate="${r.date}">
         <div class="nr-head">
+          ${r.gym ? '<span class="nr-gym">💪 パーソナル</span>' : ''}
           <span class="nr-date">${fmtDate(r.date)}</span>
           <span class="nr-rel">${relDayLabel(r.date)}</span>
           ${r.sum
@@ -1641,6 +1680,8 @@
   $('#addExToDay').addEventListener('click', () => openExercisePicker());
 
   $('#recBody').addEventListener('click', (e) => {
+    const gt = e.target.closest('[data-gymtoggle]');
+    if (gt) { toggleGym(state.recDate); return; }
     const nt = e.target.closest('[data-noteedit]');
     if (nt) { openNoteSheet(state.recDate); return; }
     const mv = e.target.closest('[data-moveex]');
