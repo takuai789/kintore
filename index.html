@@ -192,6 +192,15 @@
   .gym-chip.on { background: var(--navy); color: #fff; border: 1.5px solid var(--navy); }
   .gym-chip.on .gc-em { filter: none; opacity: 1; }
   .gym-chip:active { transform: scale(0.96); }
+  /* 2回タップの待ち状態（1回目を押したあと） */
+  .gym-chip .gc-a { display: none; }
+  .gym-chip.armed { background: var(--amber); color: #fff; border: 1.5px solid var(--amber);
+    animation: gymPulse 1s ease-in-out infinite; }
+  .gym-chip.armed .gc-em { filter: none; opacity: 1; }
+  .gym-chip.armed .gc-l { display: none; }
+  .gym-chip.armed .gc-a { display: inline; }
+  @keyframes gymPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.62; } }
+  @media (prefers-reduced-motion: reduce) { .gym-chip.armed { animation: none; } }
 
   /* ---- その日のメモ（筋肉痛など） ---- */
   .note-add { width: 100%; background: #fff; border-radius: 12px; padding: 13px 14px; margin-bottom: 14px;
@@ -597,8 +606,8 @@
         </button></div>
     </div>
     <div class="hist-seg">
-      <button data-histmode="ex" id="hsEx" class="on">種目ごと</button>
-      <button data-histmode="note" id="hsNote">メモ</button>
+      <button data-histmode="note" id="hsNote" class="on">メモ</button>
+      <button data-histmode="ex" id="hsEx">種目ごと</button>
     </div>
     <div class="scroll" id="histBody"></div>
   </div>
@@ -681,7 +690,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.30.0';
+  const APP_VERSION = '3.31.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -720,7 +729,7 @@
     mixAudio: false,   // 音楽と共存させるか（trueだと画面ロック中は鳴らない）
     collapsed: {},     // 折りたたみ中の種目ID { [exerciseId]: true }
     histOpen: null,    // 履歴タブで展開中の種目ID
-    histMode: 'ex',    // 履歴タブの表示: 'ex'=種目ごと | 'note'=メモ
+    histMode: 'note',  // 履歴タブの表示: 'note'=メモ（既定） | 'ex'=種目ごと
     tabOrder: ['rec','hist','menu','ex'], // 下のタブの並び順（端末に記憶）
     lastExport: 0,     // 最後にJSON書き出しした時刻(ms)
   };
@@ -898,6 +907,7 @@
 
   // ---------- render: 記録 ----------
   function renderRec() {
+    disarmGym();   // 描き直すと要素が入れ替わるので、待ち状態はここで必ず解除
     const date = state.recDate;
     const chip = $('#dateChip');
     const w = workoutByDate(date);
@@ -997,8 +1007,9 @@
   // 記録画面の「その日」欄（パーソナルの印＋メモ）
   function renderNoteCard(w) {
     const gym = !!(w && w.gym);
+    // 誤タップ防止のため2回タップで切り替える（1回目は「もう1回」の待ち状態）
     const chip = `<button class="gym-chip ${gym ? 'on' : ''}" data-gymtoggle="1">
-      <span class="gc-em">💪</span>パーソナル
+      <span class="gc-em">💪</span><span class="gc-l">パーソナル</span><span class="gc-a">もう1回タップ</span>
     </button>`;
     if (!hasNote(w)) {
       return `<div class="day-row">${chip}
@@ -1018,8 +1029,24 @@
     </div>`;
   }
 
-  // パーソナルジムに行った印を付け外しする（1タップ）
-  async function toggleGym(date) {
+  // パーソナルジムの印。誤タップ防止に2回タップで切り替える
+  const GYM_ARM_MS = 3000;       // 1回目から2回目までの猶予
+  let gymArmTimer = null;
+  function gymArmed() { return !!gymArmTimer; }
+  function disarmGym() {
+    if (!gymArmTimer) return;
+    clearTimeout(gymArmTimer); gymArmTimer = null;
+    const el = $('.gym-chip'); if (el) el.classList.remove('armed');
+  }
+  async function toggleGym(date, el) {
+    // 1回目: 待ち状態にするだけ（まだ何も変えない）
+    if (!gymArmed()) {
+      if (el) el.classList.add('armed');
+      gymArmTimer = setTimeout(() => { gymArmTimer = null; if (el) el.classList.remove('armed'); }, GYM_ARM_MS);
+      return;
+    }
+    // 2回目: ここで確定
+    disarmGym();
     const wk = await ensureWorkout(date);
     if (wk.gym) delete wk.gym; else wk.gym = true;
     const on = !!wk.gym;
@@ -1681,7 +1708,8 @@
 
   $('#recBody').addEventListener('click', (e) => {
     const gt = e.target.closest('[data-gymtoggle]');
-    if (gt) { toggleGym(state.recDate); return; }
+    if (gt) { toggleGym(state.recDate, gt); return; }
+    disarmGym();   // ほかの場所を触ったら待ち状態は解除
     const nt = e.target.closest('[data-noteedit]');
     if (nt) { openNoteSheet(state.recDate); return; }
     const mv = e.target.closest('[data-moveex]');
