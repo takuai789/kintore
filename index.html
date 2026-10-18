@@ -690,7 +690,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.32.0';
+  const APP_VERSION = '3.33.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -2673,11 +2673,11 @@
       <div class="set-group">
         <button class="set-item" id="btnExport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
-          <span>データを書き出す（JSON）</span><span class="chev">›</span>
+          <span>データを書き出す（バックアップ）</span><span class="chev">›</span>
         </button>
         <button class="set-item" id="btnImport">
           <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
-          <span>データを取り込む（マージ）</span><span class="chev">›</span>
+          <span>データを取り込む</span><span class="chev">›</span>
         </button>
       </div>
       <div class="set-note">書き出したJSONをiCloud Drive等に置けば、別の端末で「取り込む」を押して同期できます。同じ記録は新しい方が残ります（スマートマージ）。</div>
