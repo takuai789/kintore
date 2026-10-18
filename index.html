@@ -184,6 +184,14 @@
 
   /* ---- その日の印（パーソナルジム） ---- */
   .day-row { display: flex; gap: 8px; margin-bottom: 14px; align-items: stretch; }
+  .place-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .place-row .pr-l { font-size: 12px; font-weight: 700; color: var(--secondary); flex-shrink: 0; padding: 0 2px; }
+  .place-chip { flex-shrink: 0; background: #fff; border: 1.5px solid var(--sep); border-radius: 999px; padding: 0 16px; min-height: 40px; font-size: 14px; font-weight: 700; color: var(--secondary); }
+  .place-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .hl-gyms { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+  .hl-gym { font-size: 12px; color: var(--secondary); }
+  .hl-gym b { color: var(--navy); font-weight: 700; margin-right: 4px; }
+  .hd-pl { font-size: 10.5px; font-weight: 700; color: #fff; background: var(--navy); border-radius: 5px; padding: 1px 6px; margin-left: 4px; }
   .day-row .note-add { margin-bottom: 0; flex: 1; min-width: 0; }
   .gym-chip { flex-shrink: 0; background: #fff; border-radius: 12px; padding: 0 13px; min-height: 48px;
     display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700;
@@ -531,6 +539,13 @@
 
   /* 設定の休憩ピル */
   .rest-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .gym-list { background: #fff; border-radius: 14px; overflow: hidden; margin-bottom: 8px; }
+  .gl-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+  .gl-row + .gl-row { border-top: .5px solid var(--sep); }
+  .gl-name { flex: 1; min-width: 0; border: 0; background: var(--bg); border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: inherit; color: var(--ink); }
+  .gl-del, .gl-add { flex-shrink: 0; border: 0; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; font-family: inherit; }
+  .gl-del { background: none; color: #E5484D; }
+  .gl-add { background: var(--navy); color: #fff; }
   .rest-pills button { padding: 11px 16px; min-height: 44px; border-radius: 999px; background: #fff; color: var(--secondary); font-size: 14px; font-weight: 600; border: 1px solid var(--sep); }
   .rest-pills button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
 
@@ -690,7 +705,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.33.0';
+  const APP_VERSION = '3.34.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -711,7 +726,8 @@
   const SORE_LV = { 1: '軽い', 2: 'ふつう', 3: '強い' };
   const state = {
     exercises: [],   // {id,name,category,isPreset,hidden,fav,order,createdAt,updatedAt}
-    workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,at}]}],updatedAt}
+    workouts: [],    // {id(=date),date,entries:[{exerciseId,sets:[{w,r,at}]}],place?(ジムID),updatedAt}
+    gyms: [],        // 行っているジム [{id,name}]（端末に記憶・バックアップにも入る）
     tab: 'rec',
     recDate: todayStr(),
     weightStep: 2.5,   // 重量の増減刻み（端末に記憶）
@@ -842,7 +858,7 @@
   async function saveWorkout(w) {
     w.updatedAt = now();
     // 空ワークアウト（種目もメモも印もない）は保存せず削除
-    if (!w.entries.length && !hasDayInfo(w)) {
+    if (!w.entries.length && !hasDayInfo(w) && !w.place) {
       state.workouts = state.workouts.filter(x => x.id !== w.id);
       await del('workouts', w.id).catch(()=>{});
     } else {
@@ -869,7 +885,10 @@
 
   function recentWeights(exId, limit=4) {
     const out = [];
-    const days = state.workouts.slice().sort((a,b)=> a.id < b.id ? 1 : -1);
+    // 今日のジムが決まっていれば、そのジムでの重さを先に並べる
+    const pl = placeOf(state.recDate);
+    const days = state.workouts.slice().sort((a,b)=> a.id < b.id ? 1 : -1)
+      .sort((a,b) => pl ? ((b.place === pl) - (a.place === pl)) : 0);
     for (const w of days) {
       const en = w.entries.find(x => x.exerciseId === exId);
       if (!en) continue;
@@ -882,26 +901,37 @@
     return out;
   }
 
+  // ---- ジム（2か所以上に通っているとき、ジムごとに前回の重さを出す） ----
+  const GYMS_KEY = 'tsumiage-gyms';
+  function loadGyms() { try { const g = JSON.parse(localStorage.getItem(GYMS_KEY) || '[]'); if (Array.isArray(g)) state.gyms = g.filter(x => x && x.id && x.name); } catch (_) {} }
+  function saveGyms() { try { localStorage.setItem(GYMS_KEY, JSON.stringify(state.gyms)); } catch (_) {} }
+  const gymById = (id) => state.gyms.find(g => g.id === id);
+  // その日のジム（未設定なら null）
+  function placeOf(date) { const w = state.workouts.find(x => x.id === date); return w && w.place && gymById(w.place) ? w.place : null; }
+
   // 前回その種目をやった日の「最後のセット」を返す
   // ---- 実施履歴のたった一つの集計元 ----
   // その種目を実施した日を新しい順に返す。beforeDate を渡すとその日より前だけ。
   // 「前回」も「履歴タブ」もここを通すことで、定義のズレを防ぐ。
-  function sessionsOf(exId, beforeDate) {
+  function sessionsOf(exId, beforeDate, place) {
     return state.workouts
       .filter(w => (beforeDate ? w.id < beforeDate : true))
+      .filter(w => (place ? w.place === place : true))
       .map(w => ({ date: w.id, entry: w.entries.find(en => en.exerciseId === exId) }))
       .filter(x => x.entry && x.entry.sets.length)
       .sort((a,b) => a.date < b.date ? 1 : (a.date > b.date ? -1 : 0));
   }
   // 直近の実施1件（{date, sets, last, setCount}）。無ければ null
-  function lastSessionOf(exId, beforeDate) {
-    const s = sessionsOf(exId, beforeDate)[0];
+  function lastSessionOf(exId, beforeDate, place) {
+    const s = sessionsOf(exId, beforeDate, place)[0];
     if (!s) return null;
     return { date: s.date, sets: s.entry.sets, last: s.entry.sets[s.entry.sets.length-1], setCount: s.entry.sets.length };
   }
   // 「前回」= 直近実施日の最後のセット
+  // ジムが決まっている日は、同じジムでの前回を優先（無ければどこでも）
   function prevSetFor(exId, beforeDate) {
-    const s = lastSessionOf(exId, beforeDate);
+    const pl = beforeDate ? placeOf(beforeDate) : null;
+    const s = (pl && lastSessionOf(exId, beforeDate, pl)) || lastSessionOf(exId, beforeDate);
     return s ? s.last : null;
   }
 
@@ -1011,8 +1041,11 @@
     const chip = `<button class="gym-chip ${gym ? 'on' : ''}" data-gymtoggle="1">
       <span class="gc-em">💪</span><span class="gc-l">パーソナル</span><span class="gc-a">もう1回タップ</span>
     </button>`;
+    const place = w && w.place && gymById(w.place) ? w.place : null;
+    const gymRow = state.gyms.length ? `<div class="place-row"><span class="pr-l">ジム</span>${state.gyms.map(g =>
+      `<button class="place-chip ${place === g.id ? 'on' : ''}" data-place="${g.id}">${esc(g.name)}</button>`).join('')}</div>` : '';
     if (!hasNote(w)) {
-      return `<div class="day-row">${chip}
+      return gymRow + `<div class="day-row">${chip}
         <button class="note-add" data-noteedit="1">
           <span class="na-em">📝</span>メモを書く
         </button>
@@ -1020,13 +1053,24 @@
     }
     const tags = notePartsOf(w.note);
     const txt = (w.note.text || '').trim();
-    return `<div class="day-row">${chip}</div>
+    return gymRow + `<div class="day-row">${chip}</div>
     <div class="note-card" data-noteedit="1">
       <div class="nc-top"><span class="nc-lbl">📝 この日のメモ</span><span class="nc-edit">編集</span></div>
       ${tags.length ? `<div class="sore-tags">${tags.map(t =>
         `<span class="sore-tag lv${t.lv}">${t.part}<span class="st-lv">${SORE_LV[t.lv]}</span></span>`).join('')}</div>` : ''}
       ${txt ? `<div class="nc-text">${esc(txt)}</div>` : ''}
     </div>`;
+  }
+
+  // その日のジムを選ぶ（もう一度押すと外す）
+  async function setPlace(date, gymId) {
+    disarmGym();
+    const wk = await ensureWorkout(date);
+    if (wk.place === gymId) delete wk.place; else wk.place = gymId;
+    await saveWorkout(wk);
+    renderRec(); renderHist();
+    const g = gymById(wk.place);
+    toast(g ? `${g.name}の日にしました` : 'ジムの指定を外しました');
   }
 
   // パーソナルジムの印。誤タップ防止に2回タップで切り替える
@@ -1216,7 +1260,8 @@
         <div class="hist-head" data-histopen="${r.ex.id}">
           <div class="hist-main">
             <div class="hist-name">${esc(r.ex.name)}<span class="hist-cat">${r.ex.category}</span></div>
-            <div class="hist-date">${histDateLabel(r.date)}</div>
+            <div class="hist-date">${histDateLabel(r.date)}${placeOf(r.date) ? ` ・ ${esc(gymById(placeOf(r.date)).name)}` : ''}</div>
+            ${gymLatestHTML(r.ex.id)}
           </div>
           <div class="hist-latest">
             <span class="hl-w">${fmtNum(r.last.w)}<span class="u">kg</span></span>
@@ -1274,11 +1319,20 @@
   }
 
   // その種目の過去の記録（直近5日分）
+  // ジムごとの最新（2か所以上で記録がある種目だけ）
+  function gymLatestHTML(exId) {
+    if (state.gyms.length < 2) return '';
+    const rows = state.gyms.map(g => ({ g, s: lastSessionOf(exId, null, g.id) })).filter(x => x.s);
+    if (rows.length < 2) return '';
+    return `<div class="hl-gyms">${rows.map(x => `<span class="hl-gym"><b>${esc(x.g.name)}</b>${fmtNum(x.s.last.w)}kg × ${x.s.last.r}回（${fmtDate(x.s.date)}）</span>`).join('')}</div>`;
+  }
+
   function renderHistDetail(exId) {
     let html = '<div class="hist-detail">';
     for (const s of sessionsOf(exId).slice(0, 5)) {
       const sets = s.entry.sets.map(x => `${x.r}×${fmtNum(x.w)}kg`).join(' / ');
-      html += `<div class="hd-row"><span class="hd-d">${fmtDate(s.date)}</span><span class="hd-s">${sets}</span></div>`;
+      const pl = placeOf(s.date);
+      html += `<div class="hd-row"><span class="hd-d">${fmtDate(s.date)}${pl ? `<span class="hd-pl">${esc(gymById(pl).name)}</span>` : ''}</span><span class="hd-s">${sets}</span></div>`;
     }
     html += '</div>';
     return html;
@@ -1709,6 +1763,8 @@
   $('#recBody').addEventListener('click', (e) => {
     const gt = e.target.closest('[data-gymtoggle]');
     if (gt) { toggleGym(state.recDate, gt); return; }
+    const pc = e.target.closest('[data-place]');
+    if (pc) { setPlace(state.recDate, pc.dataset.place); return; }
     disarmGym();   // ほかの場所を触ったら待ち状態は解除
     const nt = e.target.closest('[data-noteedit]');
     if (nt) { openNoteSheet(state.recDate); return; }
@@ -2592,6 +2648,10 @@
       <div class="grabber"></div>
       <h3>設定</h3>
       <div class="sub">記録 ${totalWorkouts} 日分 ・ ${totalSets} セット</div>
+      <div class="sect-label">行っているジム</div>
+      <div class="gym-list" id="gymList">${state.gyms.map(g => `<div class="gl-row"><input class="gl-name" data-gymname="${g.id}" value="${esc(g.name)}" maxlength="16"><button class="gl-del" data-gymdel="${g.id}">削除</button></div>`).join('')}
+        <div class="gl-row"><input class="gl-name" id="gymNew" placeholder="ジムの名前（例：駅前ジム）" maxlength="16"><button class="gl-add" id="gymAdd">追加</button></div></div>
+      <div class="set-note">2か所以上に通っているときに登録すると、記録画面で「その日のジム」を選べます。前回の重さは同じジムでの記録から出し、履歴タブにはジムごとの最新が並びます。</div>
       <div class="sect-label">休憩タイマー（セット記録後に自動開始）</div>
       <div class="rest-pills" id="restPills">
         ${[0,60,90,120,180].map(s=>`<button data-rest="${s}" class="${s===state.restSec?'on':''}">${s===0?'オフ':(s%60===0&&s>=60? (s/60)+'分' : s+'秒')}</button>`).join('')}
@@ -2687,6 +2747,24 @@
     `;
     openSheet(sheet);
     sheet.querySelector('#settingsDone').addEventListener('click', () => closeSheet());
+    // ジムの追加・名前変更・削除
+    const gymAddFn = () => {
+      const inp = sheet.querySelector('#gymNew'); const name = inp.value.trim(); if (!name) return;
+      state.gyms.push({ id: 'g' + Date.now().toString(36), name }); saveGyms();
+      closeSheet(); renderRec(); renderHist(); setTimeout(openSettings, 320); toast(`「${name}」を追加しました`);
+    };
+    sheet.querySelector('#gymAdd').addEventListener('click', gymAddFn);
+    sheet.querySelector('#gymNew').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); gymAddFn(); } });
+    sheet.querySelectorAll('[data-gymname]').forEach(inp => inp.addEventListener('change', () => {
+      const g = gymById(inp.dataset.gymname); const v = inp.value.trim(); if (!g || !v) { inp.value = g ? g.name : ''; return; }
+      g.name = v; saveGyms(); renderRec(); renderHist(); toast('名前を変えました');
+    }));
+    sheet.querySelectorAll('[data-gymdel]').forEach(b => b.addEventListener('click', () => {
+      const g = gymById(b.dataset.gymdel); if (!g) return;
+      if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'もう1回'; setTimeout(() => { b.dataset.armed = ''; b.textContent = '削除'; }, 3000); return; }
+      state.gyms = state.gyms.filter(x => x.id !== g.id); saveGyms();
+      closeSheet(); renderRec(); renderHist(); setTimeout(openSettings, 320); toast(`「${g.name}」を消しました（記録は残ります）`);
+    }));
     sheet.querySelector('#restPills').addEventListener('click', (e) => {
       const b = e.target.closest('[data-rest]'); if (!b) return;
       state.restSec = parseInt(b.dataset.rest,10);
@@ -2801,7 +2879,7 @@
   // ---------- JSON 書き出し / 取り込み ----------
   const SCHEMA = 'tsumiage.v1';
   async function exportData() {
-    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), exercises: state.exercises, workouts: state.workouts, menus: state.menus };
+    const data = { schema: SCHEMA, exportedAt: new Date().toISOString(), exercises: state.exercises, workouts: state.workouts, menus: state.menus, gyms: state.gyms };
     if (await bkSave('マッスル', JSON.stringify(data, null, 2)) !== 'ok') return;
     state.lastExport = Date.now();
     try { localStorage.setItem('tsumiage-lastexport', state.lastExport); } catch (_) {}
@@ -2828,12 +2906,18 @@
       const local = mMap.get(it.id);
       if (!local || (it.updatedAt||0) > (local.updatedAt||0)) await put('menus', it);
     }
+    // gyms: 同じIDは取り込む側の名前、無いものは追加
+    if (Array.isArray(data.gyms)) {
+      for (const g of data.gyms) { if (!g || !g.id || !g.name) continue; const l = gymById(g.id); if (l) l.name = g.name; else state.gyms.push({ id: g.id, name: g.name }); }
+      saveGyms();
+    }
     await loadAll();
   }
 
   // ---------- 起動 ----------
   (async function init() {
     setupViewportTracking();
+    loadGyms();
     try { const s = parseFloat(localStorage.getItem('tsumiage-wstep')); if (s > 0) state.weightStep = s; } catch (_) {}
     try { const r = parseInt(localStorage.getItem('tsumiage-rest'),10); if (!isNaN(r) && r >= 0) state.restSec = r; } catch (_) {}
     try {
