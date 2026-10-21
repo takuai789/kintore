@@ -255,6 +255,25 @@
   .hist-seg button.on { background: #fff; color: var(--navy); font-weight: 700;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
 
+  /* ジム回数 */
+  .gc-card { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
+  .gc-t { font-size: 16px; font-weight: 700; color: var(--navy); }
+  .gc-t b { font-size: 26px; margin: 0 2px; font-variant-numeric: tabular-nums; }
+  .gc-s { font-size: 13px; color: var(--secondary); margin-top: 4px; line-height: 1.6; }
+  .gc-s b { color: var(--navy); font-size: 15px; }
+  .gc-d { margin-left: 4px; }
+  .gc-table { background: #fff; border-radius: 14px; overflow: hidden; }
+  .gc-table table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .gc-table th { font-size: 11px; font-weight: 600; color: var(--secondary); padding: 10px 6px 6px; text-align: center; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+  .gc-table td { font-size: 15px; font-weight: 700; color: var(--navy); text-align: center; padding: 9px 6px; border-top: 0.5px solid var(--sep); }
+  .gc-table .gc-m { text-align: left; padding-left: 14px; white-space: nowrap; }
+  .gc-table td.gc-m small { font-size: 10px; color: var(--secondary); font-weight: 500; margin-left: 3px; }
+  .gc-table .z { color: rgba(60,60,67,0.25); font-weight: 500; }
+  .gc-table .gc-tot { color: var(--ink, #000); }
+  .gc-table tr.cur td { background: rgba(30,58,95,0.06); }
+  .gc-bar-h { width: 26%; }
+  .gc-bar { padding-right: 14px !important; }
+  .gc-bar span { display: block; height: 8px; border-radius: 4px; background: var(--navy); opacity: .55; }
   /* メモ一覧 */
   .note-row { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
   .note-row:active { background: #fafafc; }
@@ -623,6 +642,7 @@
     <div class="hist-seg">
       <button data-histmode="note" id="hsNote" class="on">メモ</button>
       <button data-histmode="ex" id="hsEx">種目ごと</button>
+      <button data-histmode="count" id="hsCount">ジム回数</button>
     </div>
     <div class="scroll" id="histBody"></div>
   </div>
@@ -705,7 +725,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.35.0';
+  const APP_VERSION = '3.36.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -1239,9 +1259,11 @@
   }
 
   function renderHist() {
-    $('#hsEx').classList.toggle('on', state.histMode !== 'note');
+    $('#hsEx').classList.toggle('on', state.histMode === 'ex');
     $('#hsNote').classList.toggle('on', state.histMode === 'note');
+    $('#hsCount').classList.toggle('on', state.histMode === 'count');
     if (state.histMode === 'note') { renderHistNotes(); return; }
+    if (state.histMode === 'count') { renderHistCount(); return; }
     const body = $('#histBody');
     const rows = lastByExercise();
     if (!rows.length) {
@@ -1280,6 +1302,60 @@
   }
 
   // ---------- render: 履歴タブのメモ一覧（日付の新しい順） ----------
+  // ---------- ジム回数：月ごと・ジムごとに、トレを記録した日を数える ----------
+  function gymCountRows() {
+    const days = state.workouts.filter((w) => w.entries && w.entries.some((en) => en.sets && en.sets.length));
+    const map = new Map();   // 'YYYY-MM' -> { total, byGym: {gymId|'' : n} }
+    for (const w of days) {
+      const k = w.id.slice(0, 7);
+      if (!map.has(k)) map.set(k, { total: 0, by: {} });
+      const r = map.get(k), g = w.place && gymById(w.place) ? w.place : '';
+      r.total++; r.by[g] = (r.by[g] || 0) + 1;
+    }
+    // いちばん古い記録の月から今月まで（記録のない月も0で出す）
+    const cur = todayStr().slice(0, 7);
+    const first = days.length ? days.reduce((m, w) => w.id < m ? w.id : m, days[0].id).slice(0, 7) : cur;
+    const rows = [];
+    let [y, m] = cur.split('-').map(Number);
+    for (;;) {
+      const k = `${y}-${String(m).padStart(2, '0')}`;
+      rows.push(Object.assign({ key: k, y, m }, map.get(k) || { total: 0, by: {} }));
+      if (k <= first || rows.length >= 36) break;
+      m--; if (m === 0) { m = 12; y--; }
+    }
+    return rows;
+  }
+  function renderHistCount() {
+    const body = $('#histBody');
+    const rows = gymCountRows();
+    if (!rows.some((r) => r.total)) {
+      body.innerHTML = `<div class="empty"><span class="em">📅</span>まだ記録がありません。<br>トレを記録すると、月ごとにジムへ行った回数が並びます。</div>`;
+      return;
+    }
+    const gyms = state.gyms.slice();
+    const hasNone = rows.some((r) => r.by['']);
+    const cols = [...gyms.map((g) => ({ id: g.id, name: g.name })), ...(hasNone || !gyms.length ? [{ id: '', name: gyms.length ? '未指定' : '回数' }] : [])];
+    const showTotal = cols.length > 1;
+    const cur = rows[0], prev = rows[1];
+    const diff = prev ? cur.total - prev.total : 0;
+    const max = Math.max(...rows.map((r) => r.total), 1);
+    const pieces = cols.filter((c) => cur.by[c.id]).map((c) => `${esc(c.name)} <b>${cur.by[c.id]}</b>回`).join('・');
+    let html = `<div class="gc-card">
+      <div class="gc-t">${cur.m}月は <b>${cur.total}</b>回 ジムへ</div>
+      <div class="gc-s">${pieces || 'まだ行っていません'}${prev ? `<span class="gc-d">（先月 ${prev.total}回${diff ? `・${diff > 0 ? '+' : ''}${diff}` : ''}）</span>` : ''}</div>
+    </div>
+    <div class="gc-table"><table>
+      <thead><tr><th class="gc-m">月</th>${cols.map((c) => `<th>${esc(c.name)}</th>`).join('')}${showTotal ? '<th>計</th>' : ''}<th class="gc-bar-h"></th></tr></thead>
+      <tbody>${rows.map((r, i) => `<tr class="${i === 0 ? 'cur' : ''}">
+        <td class="gc-m">${r.m}月${r.m === 1 || i === rows.length - 1 ? `<small>${r.y}</small>` : ''}</td>
+        ${cols.map((c) => `<td>${r.by[c.id] || '<span class="z">0</span>'}</td>`).join('')}
+        ${showTotal ? `<td class="gc-tot">${r.total}</td>` : ''}
+        <td class="gc-bar"><span style="width:${r.total / max * 100}%"></span></td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="set-note" style="margin:8px 4px 0">トレを1種目でも記録した日を1回と数えます。ジムはその日に選んだものです（選んでいない日は「未指定」）。${gyms.length ? '' : '設定でジムを登録すると、ジムごとに分かれます。'}</div>`;
+    body.innerHTML = html;
+  }
+
   function renderHistNotes() {
     const body = $('#histBody');
     const rows = notesList();
@@ -1341,6 +1417,7 @@
   // 履歴タブの切替（#histBody の外なので、ボタン自身に直接つける）
   $('#hsEx').addEventListener('click', () => { state.histMode = 'ex'; renderHist(); });
   $('#hsNote').addEventListener('click', () => { state.histMode = 'note'; renderHist(); });
+  $('#hsCount').addEventListener('click', () => { state.histMode = 'count'; renderHist(); });
 
   $('#histBody').addEventListener('click', async (e) => {
     const nd = e.target.closest('[data-notedate]');
