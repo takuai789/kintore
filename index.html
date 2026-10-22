@@ -262,6 +262,9 @@
   .gc-s { font-size: 13px; color: var(--secondary); margin-top: 4px; line-height: 1.6; }
   .gc-s b { color: var(--navy); font-size: 15px; }
   .gc-d { margin-left: 4px; }
+  .gc-pt { display: block; margin-top: 2px; }
+  .gc-table .gc-ptd { color: #B45309; }
+  .gc-table th.gc-pth { color: #B45309; }
   .gc-table { background: #fff; border-radius: 14px; overflow: hidden; }
   .gc-table table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .gc-table th { font-size: 11px; font-weight: 600; color: var(--secondary); padding: 10px 6px 6px; text-align: center; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
@@ -725,7 +728,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.36.0';
+  const APP_VERSION = '3.37.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -1305,13 +1308,16 @@
   // ---------- ジム回数：月ごと・ジムごとに、トレを記録した日を数える ----------
   function gymCountRows() {
     const days = state.workouts.filter((w) => w.entries && w.entries.some((en) => en.sets && en.sets.length));
-    const map = new Map();   // 'YYYY-MM' -> { total, byGym: {gymId|'' : n} }
+    const map = new Map();   // 'YYYY-MM' -> { total, by: {gymId|'' : n}, pt }
+    const row = (k) => { if (!map.has(k)) map.set(k, { total: 0, by: {}, pt: 0 }); return map.get(k); };
     for (const w of days) {
-      const k = w.id.slice(0, 7);
-      if (!map.has(k)) map.set(k, { total: 0, by: {} });
-      const r = map.get(k), g = w.place && gymById(w.place) ? w.place : '';
+      const r = row(w.id.slice(0, 7)), g = w.place && gymById(w.place) ? w.place : '';
       r.total++; r.by[g] = (r.by[g] || 0) + 1;
     }
+    // パーソナル：その日の「パーソナル」の印で数える（トレの記録がない日でも印があれば1回）
+    const ptDays = state.workouts.filter((w) => w.gym);
+    for (const w of ptDays) row(w.id.slice(0, 7)).pt++;
+    days.push(...ptDays.filter((w) => !days.includes(w)));
     // いちばん古い記録の月から今月まで（記録のない月も0で出す）
     const cur = todayStr().slice(0, 7);
     const first = days.length ? days.reduce((m, w) => w.id < m ? w.id : m, days[0].id).slice(0, 7) : cur;
@@ -1319,7 +1325,7 @@
     let [y, m] = cur.split('-').map(Number);
     for (;;) {
       const k = `${y}-${String(m).padStart(2, '0')}`;
-      rows.push(Object.assign({ key: k, y, m }, map.get(k) || { total: 0, by: {} }));
+      rows.push(Object.assign({ key: k, y, m }, map.get(k) || { total: 0, by: {}, pt: 0 }));
       if (k <= first || rows.length >= 36) break;
       m--; if (m === 0) { m = 12; y--; }
     }
@@ -1328,7 +1334,7 @@
   function renderHistCount() {
     const body = $('#histBody');
     const rows = gymCountRows();
-    if (!rows.some((r) => r.total)) {
+    if (!rows.some((r) => r.total || r.pt)) {
       body.innerHTML = `<div class="empty"><span class="em">📅</span>まだ記録がありません。<br>トレを記録すると、月ごとにジムへ行った回数が並びます。</div>`;
       return;
     }
@@ -1336,23 +1342,25 @@
     const hasNone = rows.some((r) => r.by['']);
     const cols = [...gyms.map((g) => ({ id: g.id, name: g.name })), ...(hasNone || !gyms.length ? [{ id: '', name: gyms.length ? '未指定' : '回数' }] : [])];
     const showTotal = cols.length > 1;
+    const showPt = rows.some((r) => r.pt);
     const cur = rows[0], prev = rows[1];
     const diff = prev ? cur.total - prev.total : 0;
     const max = Math.max(...rows.map((r) => r.total), 1);
     const pieces = cols.filter((c) => cur.by[c.id]).map((c) => `${esc(c.name)} <b>${cur.by[c.id]}</b>回`).join('・');
     let html = `<div class="gc-card">
       <div class="gc-t">${cur.m}月は <b>${cur.total}</b>回 ジムへ</div>
-      <div class="gc-s">${pieces || 'まだ行っていません'}${prev ? `<span class="gc-d">（先月 ${prev.total}回${diff ? `・${diff > 0 ? '+' : ''}${diff}` : ''}）</span>` : ''}</div>
+      <div class="gc-s">${pieces || 'まだ行っていません'}${prev ? `<span class="gc-d">（先月 ${prev.total}回${diff ? `・${diff > 0 ? '+' : ''}${diff}` : ''}）</span>` : ''}${showPt ? `<span class="gc-pt">💪 うちパーソナル <b>${cur.pt}</b>回${prev ? `（先月 ${prev.pt}回）` : ''}</span>` : ''}</div>
     </div>
     <div class="gc-table"><table>
-      <thead><tr><th class="gc-m">月</th>${cols.map((c) => `<th>${esc(c.name)}</th>`).join('')}${showTotal ? '<th>計</th>' : ''}<th class="gc-bar-h"></th></tr></thead>
+      <thead><tr><th class="gc-m">月</th>${cols.map((c) => `<th>${esc(c.name)}</th>`).join('')}${showTotal ? '<th>計</th>' : ''}${showPt ? '<th class="gc-pth">パーソナル</th>' : ''}<th class="gc-bar-h"></th></tr></thead>
       <tbody>${rows.map((r, i) => `<tr class="${i === 0 ? 'cur' : ''}">
         <td class="gc-m">${r.m}月${r.m === 1 || i === rows.length - 1 ? `<small>${r.y}</small>` : ''}</td>
         ${cols.map((c) => `<td>${r.by[c.id] || '<span class="z">0</span>'}</td>`).join('')}
         ${showTotal ? `<td class="gc-tot">${r.total}</td>` : ''}
+        ${showPt ? `<td class="gc-ptd">${r.pt || '<span class="z">0</span>'}</td>` : ''}
         <td class="gc-bar"><span style="width:${r.total / max * 100}%"></span></td></tr>`).join('')}</tbody>
     </table></div>
-    <div class="set-note" style="margin:8px 4px 0">トレを1種目でも記録した日を1回と数えます。ジムはその日に選んだものです（選んでいない日は「未指定」）。${gyms.length ? '' : '設定でジムを登録すると、ジムごとに分かれます。'}</div>`;
+    <div class="set-note" style="margin:8px 4px 0">トレを1種目でも記録した日を1回と数えます。ジムはその日に選んだものです（選んでいない日は「未指定」）。パーソナルは、記録画面で「パーソナル」の印を付けた日の数です（ジムの回数の内数）。${gyms.length ? '' : '設定でジムを登録すると、ジムごとに分かれます。'}</div>`;
     body.innerHTML = html;
   }
 
