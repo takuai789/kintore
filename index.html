@@ -585,6 +585,9 @@
   #updateBanner:not(.show) { pointer-events: none; }
   #updateBanner.show { transform: translateY(0); }
   #updateBanner svg { flex-shrink: 0; }
+
+  /* キーボードが出ているときも、シートが画面の上にはみ出さないように（見えている高さに収めて中をスクロール） */
+  .sheet { max-height: calc(var(--app-height, 100vh) - var(--safe-top, env(safe-area-inset-top, 0px)) - 16px) !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 </style>
 </head>
 <body>
@@ -729,7 +732,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.38.0';
+  const APP_VERSION = '3.39.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
