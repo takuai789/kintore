@@ -522,6 +522,24 @@
   .cat-pills button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
 
   /* settings rows */
+  .rp-dates { display: flex; align-items: center; gap: 8px; }
+  .rp-dates input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 10px; border-radius: 10px; border: 1px solid var(--sep); background: var(--bg); color: var(--navy); }
+  .rp-sum { text-align: center; font-size: 13px; font-weight: 600; color: var(--secondary); margin: 4px 0 12px; }
+  .rp-prev { background: #fff; border-radius: 12px; padding: 10px 12px; font-size: 12px; line-height: 1.6; color: var(--secondary); max-height: 180px; overflow: auto; white-space: pre-wrap; margin-bottom: 12px; font-family: inherit; }
+  #printArea { display: none; }
+  @media print {
+    html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+    body > *:not(#printArea) { display: none !important; }
+    #printArea { display: block !important; color: #000; font-size: 11pt; line-height: 1.55; padding: 0; }
+    #printArea h1 { font-size: 16pt; margin: 0 0 4pt; }
+    #printArea .pa-meta { font-size: 10pt; color: #444; margin-bottom: 10pt; }
+    #printArea .pa-day { break-inside: avoid; border-top: 1px solid #bbb; padding-top: 6pt; margin-top: 8pt; }
+    #printArea .pa-dh { font-weight: 700; font-size: 12pt; }
+    #printArea .pa-dh span { font-weight: 400; font-size: 10pt; color: #444; margin-left: 6pt; }
+    #printArea .pa-ex { margin: 2pt 0 0 10pt; }
+    #printArea .pa-ex b { font-weight: 700; }
+    #printArea .pa-note { margin: 3pt 0 0 10pt; font-size: 10pt; color: #333; }
+  }
   .set-group { background: #fff; border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
   .set-item { display: flex; align-items: center; gap: 12px; padding: 15px 16px; border-bottom: 0.5px solid var(--sep); font-size: 15px; font-weight: 500; }
   .set-item:last-child { border-bottom: 0; }
@@ -732,7 +750,7 @@
   const del = (store, id) => new Promise((res, rej) => { const r = tx(store,'readwrite').delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
 
   // ---------- version ----------
-  const APP_VERSION = '3.39.0';
+  const APP_VERSION = '3.40.0';
 
   // ---------- categories & presets ----------
   const CATEGORIES = ['胸','背中','肩','腕','脚','体幹','有酸素','その他'];
@@ -2818,6 +2836,12 @@
           }).join('')}
         </div>` : '<div class="pb-sub">記録するとここに自動バックアップが貯まります。</div>'}
       </div>
+      <div class="set-group">
+        <button class="set-item" id="btnReport">
+          <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg></span>
+          <span>トレーニング記録を書き出す（テキスト・PDF）</span><span class="chev">›</span>
+        </button>
+      </div>
       <div class="set-note">自動バックアップはアプリの中に保存されます。端末の紛失や機種変更にも備えるなら、下の「データを書き出す」でファイルとして残してください。</div>
       <div class="set-group">
         <button class="set-item" id="btnExport">
@@ -2937,6 +2961,7 @@
       syncWakeLock();
     });
     sheet.querySelector('#btnExport').addEventListener('click', exportData);
+    sheet.querySelector('#btnReport').addEventListener('click', openReportSheet);
     sheet.querySelector('#btnImport').addEventListener('click', () => sheet.querySelector('#importFile').click());
     sheet.querySelector('#importFile').addEventListener('change', async (e) => {
       const f = e.target.files[0]; if (!f) return;
@@ -2978,6 +3003,128 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
     return 'ok';
+  }
+
+  // ---------- トレーニング記録の書き出し（期間を指定してテキスト／PDF） ----------
+  function fmtYmdJ(s) { const d = parseYmd(s); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${WDAY[d.getDay()]}）`; }
+  // 同じ重さ×回数が続くセットはまとめる（60kg×10回 ×3セット）
+  function setsText(sets) {
+    const out = []; let i = 0;
+    while (i < sets.length) {
+      const s = sets[i]; let n = 1;
+      while (i + n < sets.length && sets[i+n].w === s.w && sets[i+n].r === s.r) n++;
+      const one = (s.w > 0 ? `${fmtNum(s.w)}kg` : '自重') + `×${s.r}回`;
+      out.push(n > 1 ? `${one} ×${n}セット` : one);
+      i += n;
+    }
+    return out.join('、');
+  }
+  function reportDays(from, to) {
+    return state.workouts
+      .filter(w => w.id >= from && w.id <= to)
+      .filter(w => (w.entries || []).some(en => en.sets && en.sets.length) || w.gym || hasNote(w))
+      .sort((a, b) => a.id < b.id ? -1 : 1);
+  }
+  function reportData(from, to) {
+    const days = reportDays(from, to);
+    let sets = 0, exCount = 0, vol = 0, trainDays = 0, pt = 0;
+    const dayItems = days.map(w => {
+      const ents = (w.entries || []).filter(en => en.sets && en.sets.length).map(en => {
+        const ex = exById(en.exerciseId);
+        sets += en.sets.length; exCount++;
+        for (const s of en.sets) vol += (s.w || 0) * (s.r || 0);
+        return { name: ex ? ex.name : '（削除した種目）', cat: ex && ex.category ? ex.category : '', sets: en.sets, setN: en.sets.length };
+      });
+      if (ents.length) trainDays++;
+      if (w.gym) pt++;
+      const g = w.place && gymById(w.place) ? gymById(w.place).name : '';
+      const parts = notePartsOf(w.note).map(p => `${p.part}（${SORE_LV[p.lv]}）`);
+      const txt = w.note && w.note.text ? w.note.text.trim() : '';
+      return { date: w.id, gym: g, pt: !!w.gym, ents, parts, txt };
+    });
+    return { from, to, days: dayItems, trainDays, sets, exCount, vol: Math.round(vol), pt };
+  }
+  function reportText(r) {
+    const L = [];
+    L.push('マッスル トレーニング記録');
+    L.push(`期間：${fmtYmdJ(r.from)} 〜 ${fmtYmdJ(r.to)}`);
+    L.push(`合計：${r.trainDays}日・のべ${r.exCount}種目・${r.sets}セット` + (r.vol ? `（総挙上量 ${r.vol.toLocaleString('ja-JP')}kg）` : '') + (r.pt ? `・パーソナル${r.pt}回` : ''));
+    for (const d of r.days) {
+      L.push('');
+      L.push(`■ ${fmtYmdJ(d.date)}` + (d.gym ? `　${d.gym}` : '') + (d.pt ? '　パーソナル' : ''));
+      for (const e of d.ents) L.push(`・${e.name}${e.cat ? `（${e.cat}）` : ''}　${setsText(e.sets)}`);
+      if (d.parts.length) L.push(`　筋肉痛：${d.parts.join('・')}`);
+      if (d.txt) L.push(`　メモ：${d.txt.replace(/\n/g, ' / ')}`);
+    }
+    if (!r.days.length) { L.push(''); L.push('この期間の記録はありません。'); }
+    return L.join('\n');
+  }
+  function reportHtml(r) {
+    const days = r.days.map(d => `<div class="pa-day"><div class="pa-dh">${esc(fmtYmdJ(d.date))}<span>${esc([d.gym, d.pt ? 'パーソナル' : ''].filter(Boolean).join('・'))}</span></div>` +
+      d.ents.map(e => `<div class="pa-ex"><b>${esc(e.name)}</b>${e.cat ? `（${esc(e.cat)}）` : ''}　${esc(setsText(e.sets))}</div>`).join('') +
+      (d.parts.length ? `<div class="pa-note">筋肉痛：${esc(d.parts.join('・'))}</div>` : '') +
+      (d.txt ? `<div class="pa-note">メモ：${esc(d.txt)}</div>` : '') + '</div>').join('');
+    return `<h1>マッスル トレーニング記録</h1><div class="pa-meta">期間：${esc(fmtYmdJ(r.from))} 〜 ${esc(fmtYmdJ(r.to))}<br>合計：${r.trainDays}日・のべ${r.exCount}種目・${r.sets}セット${r.vol ? `（総挙上量 ${r.vol.toLocaleString('ja-JP')}kg）` : ''}${r.pt ? `・パーソナル${r.pt}回` : ''}</div>` + (days || '<p>この期間の記録はありません。</p>');
+  }
+  async function shareText(name, text) {
+    if (navigator.maxTouchPoints > 0) {
+      try {
+        const file = new File([text], name, { type: 'text/plain' });
+        if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  function openReportSheet() {
+    const t = todayStr(), d = parseYmd(t);
+    const first = (y, m) => ymd(new Date(y, m, 1)), last = (y, m) => ymd(new Date(y, m + 1, 0));
+    const PRESETS = {
+      thisMonth: ['今月', first(d.getFullYear(), d.getMonth()), t],
+      lastMonth: ['先月', first(d.getFullYear(), d.getMonth() - 1), last(d.getFullYear(), d.getMonth() - 1)],
+      last30: ['直近30日', shiftDay(t, -29), t],
+      thisYear: ['今年', `${d.getFullYear()}-01-01`, t],
+      all: ['すべて', (state.workouts.map(w => w.id).sort()[0]) || t, t],
+    };
+    let key = 'thisMonth';
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `
+      <h3>トレーニング記録を書き出す</h3>
+      <div class="sub">期間を選んで、テキストかPDFにします</div>
+      <div class="rest-pills" id="rpPills">${Object.entries(PRESETS).map(([k, v]) => `<button data-rp="${k}" class="${k === key ? 'on' : ''}">${v[0]}</button>`).join('')}</div>
+      <div class="field-box"><div class="fb-head"><span class="fb-lbl">期間</span></div>
+        <div class="rp-dates"><input type="date" id="rpFrom"><span>〜</span><input type="date" id="rpTo"></div></div>
+      <div class="rp-sum" id="rpSum"></div>
+      <div class="rp-prev" id="rpPrev"></div>
+      <button class="sheet-save big" id="rpTxt">テキストで書き出す</button>
+      <button class="sheet-toggle" id="rpPdf">PDFにする（印刷画面から保存）</button>`;
+    const $f = sheet.querySelector('#rpFrom'), $t = sheet.querySelector('#rpTo');
+    const apply = (k) => { key = k; $f.value = PRESETS[k][1]; $t.value = PRESETS[k][2]; sheet.querySelectorAll('[data-rp]').forEach(b => b.classList.toggle('on', b.dataset.rp === k)); upd(); };
+    const range = () => { let a = $f.value, b = $t.value; if (a && b && a > b) [a, b] = [b, a]; return [a, b]; };
+    const upd = () => {
+      const [a, b] = range(); if (!a || !b) return;
+      const r = reportData(a, b);
+      sheet.querySelector('#rpSum').textContent = `${r.trainDays}日・のべ${r.exCount}種目・${r.sets}セット`;
+      const txt = reportText(r); sheet.querySelector('#rpPrev').textContent = txt.split('\n').slice(4, 15).join('\n') + (txt.split('\n').length > 15 ? '\n…' : '');
+    };
+    sheet.querySelector('#rpPills').addEventListener('click', (e) => { const b = e.target.closest('[data-rp]'); if (b) apply(b.dataset.rp); });
+    [$f, $t].forEach(el => el.addEventListener('change', () => { key = ''; sheet.querySelectorAll('[data-rp]').forEach(b => b.classList.remove('on')); upd(); }));
+    sheet.querySelector('#rpTxt').addEventListener('click', async () => {
+      const [a, b] = range(); if (!a || !b) return toast('期間を選んでください');
+      await shareText(`マッスル記録_${a}_${b}.txt`, reportText(reportData(a, b)));
+    });
+    sheet.querySelector('#rpPdf').addEventListener('click', () => {
+      const [a, b] = range(); if (!a || !b) return toast('期間を選んでください');
+      let pa = document.getElementById('printArea');
+      if (!pa) { pa = document.createElement('div'); pa.id = 'printArea'; document.body.appendChild(pa); }
+      pa.innerHTML = reportHtml(reportData(a, b));
+      const old = document.title; document.title = `マッスル記録_${a}_${b}`;
+      setTimeout(() => { try { window.print(); } catch (e) { toast('この端末では印刷画面を開けませんでした'); } document.title = old; }, 50);
+    });
+    openSheet(sheet);
+    apply(key);
   }
 
   // ---------- JSON 書き出し / 取り込み ----------
